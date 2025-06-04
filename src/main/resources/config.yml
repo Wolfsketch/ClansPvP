@@ -9,10 +9,10 @@ debug-mode: false
 # ─── Power System ─────────────────────────────
 
 enable-power: true
-start-power-per-player: 10
-max-power-per-player: 10
+start-power-per-player: 0
+max-power-per-player: 50
 power-per-kill: 1
-power-loss-per-death: 1
+power-loss-per-death: 2
 
 power-regen:
   enabled: true
@@ -42,13 +42,13 @@ donor-bonus-vault:
 claiming:
   enabled: true
   use-whole-chunk: true
+  chunk-includes-full-height: true # Y-as volledige hoogte
   allow-overclaiming: true
   max-chunks-per-clan-member: 1
   overclaim-penalty: true
   overclaim-warning: "&c⚠ Your clan is vulnerable to overclaiming!"
   overclaim-safe: "&a✔ Your clan is no longer overclaimable."
-  max-vault-slots: 20
-  chunk-includes-full-height: true
+  unclaim-on-disband: true
 
 # ─── Clan Creation Settings ──────────────────
 
@@ -60,6 +60,49 @@ clan-creation:
   min-kdr-to-create: 0
   allow-friendly-fire: false
   max-members-per-clan: 15
+
+# ─── Clan Vault Settings ─────────────────────
+
+vault:
+  enabled: true
+  base-slots: 20
+  allow-item-limit: true
+
+# ─── Warp System ─────────────────────────────
+
+warp:
+  enabled: true
+  max-warps-per-clan: 5
+  cooldown-seconds: 30
+  setwarp-permission: false
+
+# ─── Role Permissions ────────────────────────
+
+roles:
+  LEADER:
+    can-invite: true
+    can-promote: true
+    can-demote: true
+    can-claim: true
+    can-unclaim: true
+    can-setwarp: true
+    can-raid: true
+  OFFICER:
+    can-invite: true
+    can-promote: false
+    can-demote: false
+    can-claim: true
+    can-unclaim: false
+    can-setwarp: true
+    can-raid: true
+  MEMBER:
+    can-invite: false
+    can-promote: false
+    can-demote: false
+    can-claim: false
+    can-unclaim: false
+    can-setwarp: false
+    can-raid: false
 
 # ─── Raid Settings ────────────────────────────
 
@@ -89,6 +132,7 @@ messages:
   player-already-in-clan: "&c✘ &7You are already in a clan."
   player-joined-clan: "&a✔ &f%player% &7joined your clan!"
   player-left-clan: "&e✦ &f%player% &7has left your clan."
+  player-invited: "&a✔ &7You invited &f%player% &7to your clan."
   not-enough-kdr: "&c✘ &7Your K/D ratio is too low. Required: &e%kdr%"
   overclaimed-land: "&c⚠ &7An enemy has overclaimed part of your land!"
   vault-opened: "&a✔ &7Clan vault opened."
@@ -96,6 +140,12 @@ messages:
   vault-item-added: "&a✔ &7Item added to vault."
   clan-header: "&8─[ &6Clan Info &8]─"
   vault-header: "&8─[ &bClan Vault &8]─"
+  clan-disbanded: "&c✘ &7Clan &e%name% &7has been disbanded. All land unclaimed."
+  promoted: "&a✔ &f%player% &7has been promoted."
+  demoted: "&e✦ &f%player% &7has been demoted."
+  warp-set: "&a✔ &7Warp &f%warp% &7has been set."
+  warp-teleport: "&b✦ &7Teleporting to warp &f%warp%..."
+  warp-not-found: "&c✘ &7Warp &f%warp% &7does not exist."
 
 # ─── UI Settings ──────────────────────────────
 

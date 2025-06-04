@@ -6,9 +6,11 @@ import me.jason.clanspvp.models.PlayerData;
 import me.jason.clanspvp.utils.ChatUtil;
 import me.jason.clanspvp.managers.ClanManager;
 import me.jason.clanspvp.managers.ConfigManager;
+import me.jason.clanspvp.managers.ClaimManager;
 import me.jason.clanspvp.utils.ClanScoreboard;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -22,8 +24,8 @@ public class ClanCommand implements CommandExecutor {
     private final ClansPvP plugin;
     private final Map<UUID, Long> disbandConfirmations = new ConcurrentHashMap<>();
 
-    public ClanCommand() {
-        this.plugin = ClansPvP.getInstance();
+    public ClanCommand(ClansPvP plugin) {
+        this.plugin = plugin;
     }
 
     @Override
@@ -36,6 +38,7 @@ public class ClanCommand implements CommandExecutor {
 
         Player player = (Player) sender;
         ClanManager clanManager = plugin.getClanManager();
+        ClaimManager claimManager = plugin.getClaimManager();
         PlayerData data = plugin.getPlayerData(player.getUniqueId());
 
         String line = ChatUtil.color("\u00a78\u00a7m                                                           ");
@@ -53,8 +56,41 @@ public class ClanCommand implements CommandExecutor {
             player.sendMessage(ChatUtil.color("&e→ &7/clan confirm &8– &fConfirm disbanding your clan"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan promote &8<&fplayer&8> &8– &fPromote a member"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan demote &8<&fplayer&8> &8– &fDemote a member"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan claim &8– &fClaim the land you stand on"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan raid start | stop | check &8– &fManage raids"));
             player.sendMessage(" ");
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("claim")) {
+            Clan clan = data.getClan();
+            if (clan == null) {
+                player.sendMessage(ChatUtil.color("&c✗ You are not in a clan."));
+                return true;
+            }
+
+            Chunk chunk = player.getLocation().getChunk();
+            if (claimManager.isClaimed(chunk)) {
+                player.sendMessage(ChatUtil.color("&c✗ This land is already claimed."));
+                return true;
+            }
+
+            String clanName = clan.getName();
+            int currentClaims = claimManager.getClaimCount(clanName);
+            int maxClaims = ConfigManager.get().getInt("claiming.max-chunks-per-clan-member")
+                    * clanManager.getMembers(clan).size();
+
+            if (currentClaims >= maxClaims) {
+                player.sendMessage(ChatUtil.color("&c✗ Your clan has reached the maximum number of claimed chunks."));
+                return true;
+            }
+
+            boolean success = claimManager.claimChunk(clanName, chunk, maxClaims);
+            if (success) {
+                player.sendMessage(ChatUtil.color("&a✔ You have successfully claimed this land for your clan!"));
+            } else {
+                player.sendMessage(ChatUtil.color("&c✗ Failed to claim the chunk."));
+            }
             return true;
         }
 

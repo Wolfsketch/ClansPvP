@@ -16,14 +16,15 @@ import me.jason.clanspvp.managers.ClanManager;
 import me.jason.clanspvp.managers.ClaimManager;
 import me.jason.clanspvp.models.Clan;
 import me.jason.clanspvp.models.PlayerData;
+
 import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 
 public class ClansPvP extends JavaPlugin {
 
@@ -45,26 +46,25 @@ public class ClansPvP extends JavaPlugin {
 
         saveDefaultConfig();
 
-        // Managers
+        // Initialize managers
         clanManager = new ClanManager();
         claimManager = new ClaimManager();
 
-        // Vault setup
+        // Setup Vault permissions
         setupPermissions();
 
-        // Command executors
-        getCommand("clan").setExecutor(new ClanCommand());
+        // Register only main /clan command
+        getCommand("clan").setExecutor(new ClanCommand(this));
         getCommand("clan").setTabCompleter(new ClanTabCompleter());
-        getCommand("claim").setExecutor(new ClaimCommand());
 
-        // Event listeners
+        // Register event listeners
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerKillListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
 
         getLogger().info("ClansPvP enabled.");
 
-        // === Clans laden ===
+        // === Load Clans ===
         File clansFile = new File(getDataFolder(), "clans.yml");
         if (!clansFile.exists()) {
             try {
@@ -90,11 +90,12 @@ public class ClansPvP extends JavaPlugin {
                         clan.addMember(member, role);
                     }
                 }
+
                 clanManager.registerClan(clan);
             }
         }
 
-        // === PlayerData laden ===
+        // === Load PlayerData ===
         File playerFile = new File(getDataFolder(), "playerdata.yml");
         if (!playerFile.exists()) {
             try {
@@ -120,6 +121,7 @@ public class ClansPvP extends JavaPlugin {
                     data.setClan(clan);
                     data.setClanRole(clanRole);
                 }
+
                 playerDataMap.put(uuid, data);
             }
         }
@@ -129,13 +131,12 @@ public class ClansPvP extends JavaPlugin {
     public void onDisable() {
         getLogger().info("ClansPvP disabled.");
 
-        // === Clans opslaan ===
+        // === Save Clans ===
         File clansFile = new File(getDataFolder(), "clans.yml");
         FileConfiguration clansConfig = YamlConfiguration.loadConfiguration(clansFile);
-
         clansConfig.set("clans", null);
 
-        for (Clan clan : getClanManager().getAllClans()) {
+        for (Clan clan : clanManager.getAllClans()) {
             String path = "clans." + clan.getName();
             clansConfig.set(path + ".tag", clan.getTag());
             clansConfig.set(path + ".leader", clan.getLeader().toString());
@@ -152,10 +153,9 @@ public class ClansPvP extends JavaPlugin {
             e.printStackTrace();
         }
 
-        // === PlayerData opslaan ===
+        // === Save PlayerData ===
         File playerFile = new File(getDataFolder(), "playerdata.yml");
         FileConfiguration playerConfig = YamlConfiguration.loadConfiguration(playerFile);
-
         playerConfig.set("players", null);
 
         for (Map.Entry<UUID, PlayerData> entry : playerDataMap.entrySet()) {

@@ -6,13 +6,13 @@ import java.util.*;
 
 public class ClanManager {
 
-    private final Map<String, Clan> clans = new HashMap<>(); // naam → Clan
-    private final Map<String, List<UUID>> clanMembers = new HashMap<>(); // naam → leden
+    private final Map<String, Clan> clans = new HashMap<>(); // name → Clan
+    private final Map<String, List<UUID>> clanMembers = new HashMap<>(); // name → members
 
     public void registerClan(Clan clan) {
         String name = clan.getName().toLowerCase();
         clans.put(name, clan);
-        clanMembers.put(name, new ArrayList<>(List.of(clan.getLeader()))); // Leader toevoegen als eerste lid
+        clanMembers.put(name, new ArrayList<>(List.of(clan.getLeader()))); // Add leader as first member
     }
 
     public void unregisterClan(String name) {
@@ -21,17 +21,20 @@ public class ClanManager {
         clanMembers.remove(name);
     }
 
-    public boolean clanExists(String name) {
-        return clans.containsKey(name.toLowerCase());
-    }
-
     public Clan getClan(String name) {
         return clans.get(name.toLowerCase());
     }
 
+    public boolean clanExists(String name) {
+        return clans.containsKey(name.toLowerCase());
+    }
+
     public void addMember(Clan clan, UUID uuid) {
         String name = clan.getName().toLowerCase();
-        clanMembers.computeIfAbsent(name, k -> new ArrayList<>()).add(uuid);
+        List<UUID> members = clanMembers.computeIfAbsent(name, k -> new ArrayList<>());
+        if (!members.contains(uuid)) {
+            members.add(uuid);
+        }
     }
 
     public List<UUID> getMembers(Clan clan) {
@@ -45,6 +48,10 @@ public class ClanManager {
             }
         }
         return null;
+    }
+
+    public Clan getClanByPlayer(UUID uuid) {
+        return getClanByMember(uuid);
     }
 
     public Collection<Clan> getAllClans() {
