@@ -82,6 +82,3 @@ Wolfsketch
 
 📄 Licentie
 Dit project is open source onder de MIT License. Je mag de code hergebruiken, aanpassen of verbeteren met naamsvermelding.
-
-Laat me weten als je ook badges wilt toevoegen zoals “build passing”, “Spigot 1.21 compatible”, enz.
-Wil je dat ik de README ook automatisch in GitHub toevoeg als bestand?
