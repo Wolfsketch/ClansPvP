@@ -1,84 +1,110 @@
-📦 ClansPvP
-Een geavanceerde en uitbreidbare Minecraft-plugin voor PvP-servers met een compleet clan-systeem, land claiming, raid support, power mechanics en een clan vault.
+# ⚔️ ClansPvP
 
-⚙️ Features
-✅ Volledig clan-systeem met de volgende commando’s:
+**ClansPvP** is een krachtige Minecraft-plugin voor PvP-servers met uitgebreide functionaliteiten zoals clans, land claiming, raids, powermechanieken, en clan vaults. Perfect voor hardcore PvP-servers met georganiseerde groepsstructuren.
 
-bash
-Kopiëren
-Bewerken
-/clan create <name> [tag]   → Maak een nieuwe clan aan
-/clan info                  → Bekijk informatie van je clan
-/clan vault                 → Open het clan-vaultsysteem
-/clan invite <player>       → Nodig een speler uit
-/clan leave                 → Verlaat je clan
-/clan promote <player>      → Promoveer een lid
-/clan demote <player>       → Degradeer een lid
-/clan raid start|stop|check → Raidbeheer voor clans
-✅ Ranks binnen een clan (Leader, Officer, Member, etc.)
+---
 
-✅ Land Claiming per chunk (16x16 blokken)
+## 🚀 Functionaliteiten
 
-✅ Raidsysteem met /clan raid start|check|stop functionaliteit
+✔️ **Volledig clan-systeem**  
+Met geavanceerde rolverdeling, uitnodigingen, promoties en demoties.
 
-✅ KDR (Kill/Death Ratio) vereiste om een clan te maken (optioneel)
+✔️ **Land Claiming per Chunk**  
+Verover gebieden (16x16) namens je clan.
 
-✅ Clan Vault – opslagruimte per clan
+✔️ **Clan Vaultsysteem**  
+Een gedeelde opslag voor alle leden van een clan.
 
-✅ Donor bonussen – power/vault upgrades via permissions
+✔️ **KDR-verificatie** *(optioneel)*  
+Stel een minimale kill/death ratio in voor het aanmaken van een clan.
 
-✅ Volledige configuratie via config.yml
+✔️ **Raid-systeem**  
+Start raids, bekijk locaties en beëindig raids met `/clan raid` commando’s.
 
-✅ Mooie moderne UI met gestylde berichten
+✔️ **Donorbonussen**  
+Vault- en poweruitbreidingen op basis van je permissiegroep.
 
-🛠️ Installatie
-Zorg dat je server PaperMC, Spigot of een compatible fork draait
+✔️ **Moderne UI**  
+Professioneel gestylde berichten met kleur, symbolen en opmaak.
 
-Download de jar uit target/ClansPvP-1.0.0.jar
+---
 
-Plaats het bestand in de plugins/ folder van je server
+## 💬 Belangrijke Commands
 
-Start de server opnieuw
+```
+/clan create <name> [tag]     → Maak een nieuwe clan aan
+/clan info                    → Bekijk info van je huidige clan
+/clan vault                   → Open de clanopslag
+/clan invite <player>         → Nodig een speler uit
+/clan leave                   → Verlaat je clan
+/clan promote <player>        → Promoveer een lid
+/clan demote <player>         → Degradeer een lid
+/clan raid start|stop|check   → Beheer raids
+```
 
-De config.yml en plugin.yml worden automatisch aangemaakt
+---
 
-📁 Maven
-Je kan deze plugin ook toevoegen aan je eigen plugin via Maven:
+## 🔧 Installatie
 
-xml
-Kopiëren
-Bewerken
-<!-- Pending deployment to public Maven repo -->
-🧪 Afhankelijkheden
-Vault (voor permissies)
+1. Download `ClansPvP.jar` (te vinden onder `target/ClansPvP-1.0.0.jar`)
+2. Plaats het in de `/plugins` map van je Minecraft-server
+3. Start je server opnieuw op
+4. De configuratiebestanden worden automatisch aangemaakt
 
-Java 17+
+---
 
-Spigot API 1.21+
+## ⚙️ Configuratie (config.yml)
 
-📝 Configuratie
-De config.yml bevat uitgebreide opties zoals:
+- Power instellingen (aan/uit)
+- Max chunks per clanneden
+- Donor group power/vault bonussen
+- UI en kleurinstellingen
+- KDR vereiste voor het starten van een clan
+- Raid rollen en rechten
 
-Power systeem (aan/uit)
+Alles is aanpasbaar in `config.yml`.
 
-Max chunks per lid
+---
 
-Donor groepen voor bonussen
+## 📦 Vereisten
 
-UI-instellingen en kleuren
+- Java 17 of hoger
+- Vault plugin (voor permissies)
+- Spigot, Paper of een afgeleide server (1.21+)
 
-KDR vereiste voor clan creation
+---
 
-Raidrollen en toestemming
+## 📸 UI Voorbeeld
 
-📷 Voorbeeld UI
-Zie hieronder een voorbeeld van de moderne helpstructuur ingame:
+Een voorbeeld van de ingame help:
 
+```
+──────────────────────────────────────── ClansPvP Help ────────────────────────────────────────
+➤ /clan create <name> [tag]     –  Create a new clan
+➤ /clan info                    –  View clan information
+➤ /clan vault                   –  Open your clan vault
+➤ /clan invite <player>         –  Invite a player
+➤ /clan leave                   –  Leave your current clan
+➤ /clan promote <player>        –  Promote a member
+➤ /clan demote <player>         –  Demote a member
+➤ /clan raid start | stop | check –  Manage raids
+──────────────────────────────────────────────────────────────────────────────────────────────
+```
 
+---
 
-👤 Ontwikkeld door
-Wolfsketch
-📧 Contact via GitHub of Discord
+## 👨‍💻 Ontwikkeld door
 
-📄 Licentie
-Dit project is open source onder de MIT License. Je mag de code hergebruiken, aanpassen of verbeteren met naamsvermelding.
+**Wolfsketch**  
+🎮 Gepassioneerde Minecraft-ontwikkelaar  
+📬 Contact via GitHub of Discord
+
+---
+
+## 📄 Licentie
+
+Released onder de **MIT License**. Vrij te gebruiken, aan te passen en te verspreiden met bronvermelding.
+
+---
+
+⭐ Vind je dit project handig? Vergeet dan geen ⭐ te geven op GitHub!
