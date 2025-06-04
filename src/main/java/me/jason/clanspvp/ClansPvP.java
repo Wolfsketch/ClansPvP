@@ -1,5 +1,7 @@
 package me.jason.clanspvp;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -11,6 +13,7 @@ import me.jason.clanspvp.listeners.PlayerDeathListener;
 import me.jason.clanspvp.listeners.PlayerKillListener;
 import me.jason.clanspvp.managers.ClanManager;
 import me.jason.clanspvp.managers.ClaimManager;
+import me.jason.clanspvp.models.Clan;
 import me.jason.clanspvp.models.PlayerData;
 import net.milkbowl.vault.permission.Permission;
 
@@ -18,6 +21,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 public class ClansPvP extends JavaPlugin {
 
@@ -56,11 +61,121 @@ public class ClansPvP extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerKillListener(), this);
 
         getLogger().info("ClansPvP enabled.");
+
+        // === Clans laden ===
+        File clansFile = new File(getDataFolder(), "clans.yml");
+        if (!clansFile.exists()) {
+            try {
+                clansFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        FileConfiguration clansConfig = YamlConfiguration.loadConfiguration(clansFile);
+
+        if (clansConfig.contains("clans")) {
+            for (String clanName : clansConfig.getConfigurationSection("clans").getKeys(false)) {
+                String tag = clansConfig.getString("clans." + clanName + ".tag");
+                String leaderStr = clansConfig.getString("clans." + clanName + ".leader");
+                UUID leader = leaderStr != null ? UUID.fromString(leaderStr) : null;
+                Clan clan = new Clan(clanName, tag, leader);
+
+                // Leden + rollen inladen
+                if (clansConfig.contains("clans." + clanName + ".members")) {
+                    for (String memberStr : clansConfig.getConfigurationSection("clans." + clanName + ".members")
+                            .getKeys(false)) {
+                        UUID member = UUID.fromString(memberStr);
+                        String role = clansConfig.getString("clans." + clanName + ".members." + memberStr + ".role");
+                        clan.addMember(member, role);
+                    }
+                }
+                clanManager.registerClan(clan);
+            }
+        }
+
+        // === PlayerData laden ===
+        File playerFile = new File(getDataFolder(), "playerdata.yml");
+        if (!playerFile.exists()) {
+            try {
+                playerFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        FileConfiguration playerConfig = YamlConfiguration.loadConfiguration(playerFile);
+
+        if (playerConfig.contains("players")) {
+            for (String uuidStr : playerConfig.getConfigurationSection("players").getKeys(false)) {
+                UUID uuid = UUID.fromString(uuidStr);
+                PlayerData data = new PlayerData(uuid);
+                data.setKills(playerConfig.getDouble("players." + uuidStr + ".kills", 0));
+                data.setDeaths(playerConfig.getDouble("players." + uuidStr + ".deaths", 0));
+                data.setPower(playerConfig.getDouble("players." + uuidStr + ".power", 5.0));
+                String clanName = playerConfig.getString("players." + uuidStr + ".clan", null);
+                String clanRole = playerConfig.getString("players." + uuidStr + ".clanRole", null);
+
+                if (clanName != null && clanManager.clanExists(clanName)) {
+                    Clan clan = clanManager.getClan(clanName);
+                    data.setClan(clan);
+                    data.setClanRole(clanRole);
+                }
+                playerDataMap.put(uuid, data);
+            }
+        }
     }
 
     @Override
     public void onDisable() {
         getLogger().info("ClansPvP disabled.");
+
+        // === Clans opslaan ===
+        File clansFile = new File(getDataFolder(), "clans.yml");
+        FileConfiguration clansConfig = YamlConfiguration.loadConfiguration(clansFile);
+
+        // Maak clans-sectie leeg
+        clansConfig.set("clans", null);
+
+        for (Clan clan : getClanManager().getAllClans()) {
+            String path = "clans." + clan.getName();
+            clansConfig.set(path + ".tag", clan.getTag());
+            clansConfig.set(path + ".leader", clan.getLeader().toString());
+
+            // Leden + rollen
+            for (UUID member : clan.getMembers().keySet()) {
+                String role = clan.getMembers().get(member);
+                clansConfig.set(path + ".members." + member.toString() + ".role", role);
+            }
+            // Hier kun je evt. meer info opslaan per clan (bv. raid coördinaten etc.)
+        }
+
+        try {
+            clansConfig.save(clansFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // === PlayerData opslaan ===
+        File playerFile = new File(getDataFolder(), "playerdata.yml");
+        FileConfiguration playerConfig = YamlConfiguration.loadConfiguration(playerFile);
+
+        playerConfig.set("players", null);
+
+        for (Map.Entry<UUID, PlayerData> entry : playerDataMap.entrySet()) {
+            UUID uuid = entry.getKey();
+            PlayerData data = entry.getValue();
+            String path = "players." + uuid.toString();
+            playerConfig.set(path + ".kills", data.getKills());
+            playerConfig.set(path + ".deaths", data.getDeaths());
+            playerConfig.set(path + ".power", data.getPower());
+            playerConfig.set(path + ".clan", data.getClan() != null ? data.getClan().getName() : null);
+            playerConfig.set(path + ".clanRole", data.getClanRole());
+        }
+
+        try {
+            playerConfig.save(playerFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public PlayerData getPlayerData(UUID uuid) {

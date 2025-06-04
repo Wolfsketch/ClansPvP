@@ -41,4 +41,8 @@ public class ClanManager {
         }
         return null;
     }
+
+    public Collection<Clan> getAllClans() {
+        return clans.values();
+    }
 }

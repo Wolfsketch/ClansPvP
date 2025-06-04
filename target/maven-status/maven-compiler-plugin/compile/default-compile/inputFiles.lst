@@ -7,6 +7,7 @@ H:\Plugins-Minecraft\ClansPvP\src\main\java\me\jason\clanspvp\commands\ClanTabCo
 H:\Plugins-Minecraft\ClansPvP\src\main\java\me\jason\clanspvp\managers\ClaimManager.java
 H:\Plugins-Minecraft\ClansPvP\src\main\java\me\jason\clanspvp\models\Clan.java
 H:\Plugins-Minecraft\ClansPvP\src\main\java\me\jason\clanspvp\commands\ClaimCommand.java
+H:\Plugins-Minecraft\ClansPvP\src\main\java\me\jason\clanspvp\utils\ClanScoreboard.java
 H:\Plugins-Minecraft\ClansPvP\src\main\java\me\jason\clanspvp\managers\PowerManager.java
 H:\Plugins-Minecraft\ClansPvP\src\main\java\me\jason\clanspvp\listeners\TNTExplosionListener.java
 H:\Plugins-Minecraft\ClansPvP\src\main\java\me\jason\clanspvp\commands\RaidCommand.java

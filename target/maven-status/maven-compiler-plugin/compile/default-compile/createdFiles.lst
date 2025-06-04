@@ -2,6 +2,7 @@ me\jason\clanspvp\commands\ClanTabCompleter.class
 me\jason\clanspvp\managers\ClanManager.class
 me\jason\clanspvp\models\PlayerData.class
 me\jason\clanspvp\utils\ChatUtil.class
+me\jason\clanspvp\utils\ClanScoreboard.class
 me\jason\clanspvp\ClansPvP.class
 me\jason\clanspvp\utils\ConfigUtil.class
 me\jason\clanspvp\commands\ClanCommand.class
