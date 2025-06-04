@@ -103,7 +103,7 @@ A preview of the in-game help:
 
 ## 📄 License
 
-Released under the **MIT License**. Free to use, modify, and distribute with attribution.
+Released under the **Non-Open Source License**. Not free to use, modify, and distribute with attribution.
 
 ---
 
