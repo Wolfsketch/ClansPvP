@@ -44,8 +44,6 @@ public class VaultCommand implements CommandExecutor {
         Inventory vault = Bukkit.createInventory(null, roundedSize,
                 ChatUtil.color(ConfigManager.getMessage("vault-header")));
 
-        // TODO: Vault opslag per clan implementeren en laden
-
         player.openInventory(vault);
         player.sendMessage(ChatUtil.color(ConfigManager.getMessage("vault-opened")));
         return true;

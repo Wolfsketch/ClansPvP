@@ -3,7 +3,6 @@ package me.jason.clanspvp.models;
 import java.util.*;
 import java.util.stream.Collectors;
 import me.jason.clanspvp.ClansPvP;
-import me.jason.clanspvp.models.PlayerData;
 
 public class Clan {
 
@@ -64,9 +63,12 @@ public class Clan {
                 .collect(Collectors.toList());
     }
 
+    public List<UUID> getAllMembers() {
+        return new ArrayList<>(members.keySet());
+    }
+
     // --- Nieuw: Power systeem ---
     public double getPower() {
-        // Optel alle power van alle leden (geef bij PlayerData een .getPower() method)
         return members.keySet().stream()
                 .map(uuid -> ClansPvP.getInstance().getPlayerData(uuid))
                 .filter(Objects::nonNull)
@@ -75,7 +77,6 @@ public class Clan {
     }
 
     public double getMaxPower() {
-        // Stel per member max 5.0 power (pas aan naar wens)
         return members.size() * 5.0;
     }
 

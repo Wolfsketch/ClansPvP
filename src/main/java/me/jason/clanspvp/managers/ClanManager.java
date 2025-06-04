@@ -15,6 +15,12 @@ public class ClanManager {
         clanMembers.put(name, new ArrayList<>(List.of(clan.getLeader()))); // Leader toevoegen als eerste lid
     }
 
+    public void unregisterClan(String name) {
+        name = name.toLowerCase();
+        clans.remove(name);
+        clanMembers.remove(name);
+    }
+
     public boolean clanExists(String name) {
         return clans.containsKey(name.toLowerCase());
     }
@@ -32,7 +38,6 @@ public class ClanManager {
         return clanMembers.getOrDefault(clan.getName().toLowerCase(), new ArrayList<>());
     }
 
-    // Optional: handig voor raid logica of automatische checks
     public Clan getClanByMember(UUID uuid) {
         for (Map.Entry<String, List<UUID>> entry : clanMembers.entrySet()) {
             if (entry.getValue().contains(uuid)) {

@@ -11,14 +11,16 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class ClanCommand implements CommandExecutor {
 
     private final ClansPvP plugin;
+    private final Map<UUID, Long> disbandConfirmations = new ConcurrentHashMap<>();
 
     public ClanCommand() {
         this.plugin = ClansPvP.getInstance();
@@ -36,38 +38,37 @@ public class ClanCommand implements CommandExecutor {
         ClanManager clanManager = plugin.getClanManager();
         PlayerData data = plugin.getPlayerData(player.getUniqueId());
 
-        String line = ChatUtil.color("§8§m                                                           ");
+        String line = ChatUtil.color("\u00a78\u00a7m                                                           ");
 
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
             player.sendMessage(" ");
             player.sendMessage(ChatUtil.color("&6                         ClansPvP Help"));
             player.sendMessage(" ");
-            player.sendMessage(ChatUtil.color("&e➤ &7/clan create &8<&fname&8> [&ftag&8] &8– &fCreate a new clan"));
-            player.sendMessage(ChatUtil.color("&e➤ &7/clan info &8– &fView clan information"));
-            player.sendMessage(ChatUtil.color("&e➤ &7/clan vault &8– &fOpen your clan vault"));
-            player.sendMessage(ChatUtil.color("&e➤ &7/clan invite &8<&fplayer&8> &8– &fInvite a player"));
-            player.sendMessage(ChatUtil.color("&e➤ &7/clan leave &8– &fLeave your current clan"));
-            player.sendMessage(ChatUtil.color("&e➤ &7/clan promote &8<&fplayer&8> &8– &fPromote a member"));
-            player.sendMessage(ChatUtil.color("&e➤ &7/clan demote &8<&fplayer&8> &8– &fDemote a member"));
-            player.sendMessage(ChatUtil.color("&e➤ &7/clan raid start | stop | check &8– &fManage raids"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan create &8<&fname&8> [&ftag&8] &8– &fCreate a new clan"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan info &8– &fView clan information"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan vault &8– &fOpen your clan vault"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan invite &8<&fplayer&8> &8– &fInvite a player"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan leave &8– &fLeave your current clan"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan disband &8– &fDisband your clan (leader only)"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan confirm &8– &fConfirm disbanding your clan"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan promote &8<&fplayer&8> &8– &fPromote a member"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan demote &8<&fplayer&8> &8– &fDemote a member"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan raid start | stop | check &8– &fManage raids"));
             player.sendMessage(" ");
             return true;
         }
 
         if (args[0].equalsIgnoreCase("info")) {
             if (data.getClan() == null) {
-                // Toon scoreboard voor geen clan
                 ClanScoreboard.showNoClanScoreboard(player);
                 player.sendMessage(ChatUtil.color("&c✗ You are not in a clan."));
                 return true;
             }
 
             Clan clan = data.getClan();
-            // Toon scoreboard met claninfo
             ClanScoreboard.showClanScoreboard(player, clan, data);
             player.sendMessage(ChatUtil.color("&aClan info shown on your scoreboard!"));
 
-            // Geavanceerde Info:
             player.sendMessage(line);
             player.sendMessage(ChatUtil.color("&6                         ✦ Clan Info ✦"));
             player.sendMessage(line);
@@ -75,7 +76,6 @@ public class ClanCommand implements CommandExecutor {
             player.sendMessage(ChatUtil.color("&7Tag:       &a[" + clan.getTag() + "]"));
             player.sendMessage(ChatUtil.color("&7Leader:    &b" + Bukkit.getOfflinePlayer(clan.getLeader()).getName()));
 
-            // Clan power & jouw power (pas deze code aan als je power anders opslaat!)
             double clanPower = clan.getPower();
             double maxPower = clan.getMaxPower();
             double playerPower = data.getPower();
@@ -84,9 +84,7 @@ public class ClanCommand implements CommandExecutor {
             player.sendMessage(ChatUtil.color("&7Your Power: &e" + playerPower));
             player.sendMessage(" ");
 
-            // Toon leden per rank
             player.sendMessage(ChatUtil.color("&6Members:"));
-
             sendMembersByRole(clan, "LEADER", "&eLeader:   ", player);
             sendMembersByRole(clan, "OFFICER", "&eOfficers: ", player);
             sendMembersByRole(clan, "MEMBER", "&eMembers:  ", player);
@@ -144,10 +142,74 @@ public class ClanCommand implements CommandExecutor {
             data.setClan(clan);
             data.setClanRole("LEADER");
 
-            String msg = ConfigManager.getMessage("clan-created")
-                    .replace("%name%", name)
-                    .replace("%tag%", tag);
-            player.sendMessage(ChatUtil.color(msg));
+            player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-created")
+                    .replace("%name%", name).replace("%tag%", tag)));
+            ClanScoreboard.showClanScoreboard(player, clan, data);
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("leave")) {
+            if (data.getClan() == null) {
+                player.sendMessage(ChatUtil.color("&c✗ You are not in a clan."));
+                return true;
+            }
+
+            if (data.getClanRole().equals("LEADER")) {
+                player.sendMessage(ChatUtil.color("&c✗ As the leader, use &e/clan disband &cto disband your clan."));
+                return true;
+            }
+
+            Clan clan = data.getClan();
+            clan.removeMember(player.getUniqueId());
+            data.setClan(null);
+            data.setClanRole(null);
+            player.sendMessage(ChatUtil.color("&aYou left your clan."));
+            ClanScoreboard.showNoClanScoreboard(player);
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("disband")) {
+            if (data.getClan() == null || !"LEADER".equals(data.getClanRole())) {
+                player.sendMessage(ChatUtil.color("&c✗ Only the clan leader can disband the clan."));
+                return true;
+            }
+
+            disbandConfirmations.put(player.getUniqueId(), System.currentTimeMillis());
+            player.sendMessage(ChatUtil.color(
+                    "&a✔ Are you sure you want to disband the clan? &eType &6/clan confirm &ewithin 30 seconds."));
+
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    disbandConfirmations.remove(player.getUniqueId());
+                }
+            }.runTaskLater(plugin, 20 * 30);
+
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("confirm")) {
+            if (!disbandConfirmations.containsKey(player.getUniqueId())) {
+                player.sendMessage(ChatUtil.color("&c✗ You have no disband request to confirm."));
+                return true;
+            }
+
+            disbandConfirmations.remove(player.getUniqueId());
+            Clan clan = data.getClan();
+
+            for (UUID member : clan.getAllMembers()) {
+                PlayerData memberData = plugin.getPlayerData(member);
+                memberData.setClan(null);
+                memberData.setClanRole(null);
+                Player online = Bukkit.getPlayer(member);
+                if (online != null) {
+                    ClanScoreboard.showNoClanScoreboard(online);
+                    online.sendMessage(ChatUtil.color("&c✗ Your clan has been disbanded."));
+                }
+            }
+
+            plugin.getClanManager().unregisterClan(clan.getName());
+            player.sendMessage(ChatUtil.color("&a✔ Clan disbanded successfully."));
             return true;
         }
 
@@ -155,9 +217,8 @@ public class ClanCommand implements CommandExecutor {
         return true;
     }
 
-    // Helper om leden per rank weer te geven
     private void sendMembersByRole(Clan clan, String role, String prefix, Player toSend) {
-        List<UUID> members = clan.getMembersByRole(role); // zorg dat deze bestaat en een lijst UUIDs teruggeeft!
+        List<UUID> members = clan.getMembersByRole(role);
         String names = members.isEmpty() ? ChatColor.GRAY + "None"
                 : members.stream()
                         .map(uuid -> Bukkit.getOfflinePlayer(uuid).getName())

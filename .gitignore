@@ -1,0 +1,11 @@
+# Build output
+target/
+*.class
+
+# IDE folders
+.vscode/
+.idea/
+
+# OS/system
+.DS_Store
+Thumbs.db

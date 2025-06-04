@@ -11,6 +11,7 @@ import me.jason.clanspvp.commands.ClanTabCompleter;
 import me.jason.clanspvp.commands.ClaimCommand;
 import me.jason.clanspvp.listeners.PlayerDeathListener;
 import me.jason.clanspvp.listeners.PlayerKillListener;
+import me.jason.clanspvp.listeners.PlayerJoinListener;
 import me.jason.clanspvp.managers.ClanManager;
 import me.jason.clanspvp.managers.ClaimManager;
 import me.jason.clanspvp.models.Clan;
@@ -59,6 +60,7 @@ public class ClansPvP extends JavaPlugin {
         // Event listeners
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerKillListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
 
         getLogger().info("ClansPvP enabled.");
 
@@ -80,7 +82,6 @@ public class ClansPvP extends JavaPlugin {
                 UUID leader = leaderStr != null ? UUID.fromString(leaderStr) : null;
                 Clan clan = new Clan(clanName, tag, leader);
 
-                // Leden + rollen inladen
                 if (clansConfig.contains("clans." + clanName + ".members")) {
                     for (String memberStr : clansConfig.getConfigurationSection("clans." + clanName + ".members")
                             .getKeys(false)) {
@@ -132,7 +133,6 @@ public class ClansPvP extends JavaPlugin {
         File clansFile = new File(getDataFolder(), "clans.yml");
         FileConfiguration clansConfig = YamlConfiguration.loadConfiguration(clansFile);
 
-        // Maak clans-sectie leeg
         clansConfig.set("clans", null);
 
         for (Clan clan : getClanManager().getAllClans()) {
@@ -140,12 +140,10 @@ public class ClansPvP extends JavaPlugin {
             clansConfig.set(path + ".tag", clan.getTag());
             clansConfig.set(path + ".leader", clan.getLeader().toString());
 
-            // Leden + rollen
             for (UUID member : clan.getMembers().keySet()) {
                 String role = clan.getMembers().get(member);
                 clansConfig.set(path + ".members." + member.toString() + ".role", role);
             }
-            // Hier kun je evt. meer info opslaan per clan (bv. raid coördinaten etc.)
         }
 
         try {
