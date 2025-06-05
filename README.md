@@ -1,16 +1,22 @@
 # ⚔️ ClansPvP
 
-**ClansPvP** is a powerful Minecraft plugin for PvP servers featuring clans, land claiming, raids, power mechanics, vaults, and an ASCII-style territory map. Perfect for hardcore PvP servers with structured group gameplay and modern, styled UI.
+**ClansPvP** is a powerful Minecraft plugin for PvP servers featuring clans, land claiming, raids, power mechanics, vaults, scoreboard stats, and an ASCII-style territory map. Perfect for hardcore PvP servers with structured group gameplay and modern, styled UI.
 
 ---
 
 ## 🚀 Features
 
 ✔️ **Complete Clan System**  
-Advanced roles, invitations, promotions, demotions, and clan disbanding.
+Advanced roles, invitations, promotions, demotions, and safe clan disbanding.
+
+✔️ **Promotion & Demotion System**  
+Use `/clan promote` and `/clan demote` to manage member ranks. Safety rules prevent the last remaining leader from demoting themselves.
 
 ✔️ **Chunk-Based Land Claiming**  
-Conquer and protect 16x16 chunks for your clan using `/clan claim`.
+Conquer and protect 16x16 chunks for your clan using `/clan claim`, with claim limits based on clan size.
+
+✔️ **Claim Statistics in Scoreboard & Info**  
+Displays how many chunks your clan owns versus the allowed limit, viewable via scoreboard or `/clan info`.
 
 ✔️ **Clan Vault System**  
 Shared storage for your entire clan using `/clan vault`.
@@ -32,7 +38,7 @@ Start, check, and stop raids with `/clan raid start|check|stop`. Only authorized
 Extra vault slots and power for users with special permissions.
 
 ✔️ **Modern UI**  
-Professionally styled messages with color codes, Unicode separators, and icons.
+Professionally styled messages with color codes, Unicode separators, and visual icons.
 
 ---
 
@@ -40,15 +46,16 @@ Professionally styled messages with color codes, Unicode separators, and icons.
 
 ```
 /clan create <name> [tag]     → Create a new clan
-/clan info                    → View your current clan
+/clan info                    → View your current clan and stats
 /clan vault                   → Open the clan vault
 /clan invite <player>         → Invite a player
 /clan leave                   → Leave your clan
-/clan promote <player>        → Promote a member
-/clan demote <player>         → Demote a member
+/clan promote <player>        → Promote a member (RECRUIT → MEMBER → OFFICER)
+/clan demote <player>         → Demote a member (OFFICER → MEMBER → RECRUIT)
 /clan disband                 → Disband your clan (leader only)
 /clan confirm                 → Confirm disband action
 /clan claim                   → Claim the land you’re standing on
+/clan unclaim                 → Unclaim the land you’re standing on
 /clan raid start|stop|check   → Manage clan raids
 /clanmap                      → View ASCII map of clan territories
 ```
