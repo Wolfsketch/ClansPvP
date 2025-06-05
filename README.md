@@ -91,13 +91,13 @@ Everything is fully customizable.
 In-game example of the `/clanmap` command:
 
 ```
-                        Clan Land Map (You are +)
+            Clan Land Map (You are +)
 
-                       ░░░░░░░░░░░░░
-                       ░░░░░█░░░░░░░
-                       ░░░░█+█░░░░░░
-                       ░░░░░█░░░░░░░
-                       ░░░░░░░░░░░░░
+                  ░░░░░░░░░░░░░
+                  ░░░░░█░░░░░░░
+                  ░░░░█+█░░░░░░
+                  ░░░░░█░░░░░░░
+                  ░░░░░░░░░░░░░
 
 Legend: + You  █ [TAG] Yours  █ Allies  █ Enemy  ░ Free
 ```
