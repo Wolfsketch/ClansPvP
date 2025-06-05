@@ -10,9 +10,10 @@ commands:
     description: Clan management and raid control command
     usage: /clan <create|join|leave|info|vault|invite|raid>
     aliases: []
-  claim:
-    description: Claim land for your clan
-    usage: /claim
+
+  clanmap:
+    description: Shows a local map of nearby claimed land
+    usage: /clanmap
     aliases: []
 
 permissions:

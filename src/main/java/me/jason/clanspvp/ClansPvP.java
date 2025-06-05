@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import me.jason.clanspvp.commands.ClanCommand;
+import me.jason.clanspvp.commands.ClanMapCommand;
 import me.jason.clanspvp.commands.ClanTabCompleter;
 import me.jason.clanspvp.commands.ClaimCommand;
 import me.jason.clanspvp.listeners.PlayerDeathListener;
@@ -56,6 +57,7 @@ public class ClansPvP extends JavaPlugin {
         // Register only main /clan command
         getCommand("clan").setExecutor(new ClanCommand(this));
         getCommand("clan").setTabCompleter(new ClanTabCompleter());
+        getCommand("clanmap").setExecutor(new ClanMapCommand(this));
 
         // Register event listeners
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
