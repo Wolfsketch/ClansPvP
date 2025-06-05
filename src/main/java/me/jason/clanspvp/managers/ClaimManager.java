@@ -60,4 +60,13 @@ public class ClaimManager {
     public String getClaimKey(Chunk chunk) {
         return chunk.getWorld().getName() + ";" + chunk.getX() + ";" + chunk.getZ();
     }
+
+    public void forceClaimChunk(String clanName, Chunk chunk) {
+        claimedChunks.put(chunk, clanName);
+        claimCounts.put(clanName, claimCounts.getOrDefault(clanName, 0) + 1);
+    }
+
+    public Map<Chunk, String> getAllClaims() {
+        return claimedChunks;
+    }
 }

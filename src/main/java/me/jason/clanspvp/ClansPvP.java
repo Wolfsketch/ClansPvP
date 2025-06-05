@@ -1,15 +1,14 @@
 package me.jason.clanspvp;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import com.google.gson.*;
+import java.io.*;
+import java.util.*;
 
 import me.jason.clanspvp.commands.ClanCommand;
 import me.jason.clanspvp.commands.ClanMapCommand;
 import me.jason.clanspvp.commands.ClanTabCompleter;
 import me.jason.clanspvp.commands.ClaimCommand;
+import me.jason.clanspvp.listeners.ClaimVisualFeedbackListener;
 import me.jason.clanspvp.listeners.PlayerDeathListener;
 import me.jason.clanspvp.listeners.PlayerKillListener;
 import me.jason.clanspvp.listeners.PlayerJoinListener;
@@ -21,8 +20,7 @@ import me.jason.clanspvp.models.PlayerData;
 import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.Chunk;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -36,6 +34,7 @@ public class ClansPvP extends JavaPlugin {
     private ClaimManager claimManager;
 
     private static Permission permissions = null;
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     public static ClansPvP getInstance() {
         return instance;
@@ -47,132 +46,164 @@ public class ClansPvP extends JavaPlugin {
 
         saveDefaultConfig();
 
-        // Initialize managers
         clanManager = new ClanManager();
         claimManager = new ClaimManager();
 
-        // Setup Vault permissions
         setupPermissions();
 
-        // Register only main /clan command
         getCommand("clan").setExecutor(new ClanCommand(this));
         getCommand("clan").setTabCompleter(new ClanTabCompleter());
         getCommand("clanmap").setExecutor(new ClanMapCommand(this));
 
-        // Register event listeners
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerKillListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
+        getServer().getPluginManager().registerEvents(new ClaimVisualFeedbackListener(this), this);
 
         getLogger().info("ClansPvP enabled.");
 
-        // === Load Clans ===
-        File clansFile = new File(getDataFolder(), "clans.yml");
-        if (!clansFile.exists()) {
-            try {
-                clansFile.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        FileConfiguration clansConfig = YamlConfiguration.loadConfiguration(clansFile);
-
-        if (clansConfig.contains("clans")) {
-            for (String clanName : clansConfig.getConfigurationSection("clans").getKeys(false)) {
-                String tag = clansConfig.getString("clans." + clanName + ".tag");
-                String leaderStr = clansConfig.getString("clans." + clanName + ".leader");
-                UUID leader = leaderStr != null ? UUID.fromString(leaderStr) : null;
-                Clan clan = new Clan(clanName, tag, leader);
-
-                if (clansConfig.contains("clans." + clanName + ".members")) {
-                    for (String memberStr : clansConfig.getConfigurationSection("clans." + clanName + ".members")
-                            .getKeys(false)) {
-                        UUID member = UUID.fromString(memberStr);
-                        String role = clansConfig.getString("clans." + clanName + ".members." + memberStr + ".role");
-                        clan.addMember(member, role);
-                    }
-                }
-
-                clanManager.registerClan(clan);
-            }
-        }
-
-        // === Load PlayerData ===
-        File playerFile = new File(getDataFolder(), "playerdata.yml");
-        if (!playerFile.exists()) {
-            try {
-                playerFile.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        FileConfiguration playerConfig = YamlConfiguration.loadConfiguration(playerFile);
-
-        if (playerConfig.contains("players")) {
-            for (String uuidStr : playerConfig.getConfigurationSection("players").getKeys(false)) {
-                UUID uuid = UUID.fromString(uuidStr);
-                PlayerData data = new PlayerData(uuid);
-                data.setKills(playerConfig.getDouble("players." + uuidStr + ".kills", 0));
-                data.setDeaths(playerConfig.getDouble("players." + uuidStr + ".deaths", 0));
-                data.setPower(playerConfig.getDouble("players." + uuidStr + ".power", 5.0));
-                String clanName = playerConfig.getString("players." + uuidStr + ".clan", null);
-                String clanRole = playerConfig.getString("players." + uuidStr + ".clanRole", null);
-
-                if (clanName != null && clanManager.clanExists(clanName)) {
-                    Clan clan = clanManager.getClan(clanName);
-                    data.setClan(clan);
-                    data.setClanRole(clanRole);
-                }
-
-                playerDataMap.put(uuid, data);
-            }
-        }
+        loadClans();
+        loadPlayerData();
+        loadClaims();
     }
 
     @Override
     public void onDisable() {
         getLogger().info("ClansPvP disabled.");
+        saveClans();
+        savePlayerData();
+        saveClaims();
+    }
 
-        // === Save Clans ===
-        File clansFile = new File(getDataFolder(), "clans.yml");
-        FileConfiguration clansConfig = YamlConfiguration.loadConfiguration(clansFile);
-        clansConfig.set("clans", null);
-
-        for (Clan clan : clanManager.getAllClans()) {
-            String path = "clans." + clan.getName();
-            clansConfig.set(path + ".tag", clan.getTag());
-            clansConfig.set(path + ".leader", clan.getLeader().toString());
-
-            for (UUID member : clan.getMembers().keySet()) {
-                String role = clan.getMembers().get(member);
-                clansConfig.set(path + ".members." + member.toString() + ".role", role);
+    private void loadClans() {
+        File file = new File(getDataFolder(), "clans.json");
+        if (!file.exists())
+            return;
+        try (Reader reader = new FileReader(file)) {
+            JsonObject root = gson.fromJson(reader, JsonObject.class);
+            JsonObject clansJson = root.getAsJsonObject("clans");
+            for (String name : clansJson.keySet()) {
+                JsonObject c = clansJson.getAsJsonObject(name);
+                UUID leader = UUID.fromString(c.get("leader").getAsString());
+                String tag = c.get("tag").getAsString();
+                Clan clan = new Clan(name, tag, leader);
+                JsonObject members = c.getAsJsonObject("members");
+                for (String uuidStr : members.keySet()) {
+                    String role = members.getAsJsonObject(uuidStr).get("role").getAsString();
+                    clan.addMember(UUID.fromString(uuidStr), role);
+                }
+                clanManager.registerClan(clan);
             }
-        }
-
-        try {
-            clansConfig.save(clansFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
-        // === Save PlayerData ===
-        File playerFile = new File(getDataFolder(), "playerdata.yml");
-        FileConfiguration playerConfig = YamlConfiguration.loadConfiguration(playerFile);
-        playerConfig.set("players", null);
-
-        for (Map.Entry<UUID, PlayerData> entry : playerDataMap.entrySet()) {
-            UUID uuid = entry.getKey();
-            PlayerData data = entry.getValue();
-            String path = "players." + uuid.toString();
-            playerConfig.set(path + ".kills", data.getKills());
-            playerConfig.set(path + ".deaths", data.getDeaths());
-            playerConfig.set(path + ".power", data.getPower());
-            playerConfig.set(path + ".clan", data.getClan() != null ? data.getClan().getName() : null);
-            playerConfig.set(path + ".clanRole", data.getClanRole());
+    private void saveClans() {
+        JsonObject root = new JsonObject();
+        JsonObject clansJson = new JsonObject();
+        for (Clan clan : clanManager.getAllClans()) {
+            JsonObject c = new JsonObject();
+            c.addProperty("tag", clan.getTag());
+            c.addProperty("leader", clan.getLeader().toString());
+            JsonObject members = new JsonObject();
+            for (UUID uuid : clan.getMembers().keySet()) {
+                JsonObject m = new JsonObject();
+                m.addProperty("role", clan.getMembers().get(uuid));
+                members.add(uuid.toString(), m);
+            }
+            c.add("members", members);
+            clansJson.add(clan.getName(), c);
         }
+        root.add("clans", clansJson);
+        try (Writer writer = new FileWriter(new File(getDataFolder(), "clans.json"))) {
+            gson.toJson(root, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-        try {
-            playerConfig.save(playerFile);
+    private void loadPlayerData() {
+        File file = new File(getDataFolder(), "playerdata.json");
+        if (!file.exists())
+            return;
+        try (Reader reader = new FileReader(file)) {
+            JsonObject root = gson.fromJson(reader, JsonObject.class);
+            JsonObject players = root.getAsJsonObject("players");
+            for (String uuidStr : players.keySet()) {
+                UUID uuid = UUID.fromString(uuidStr);
+                JsonObject data = players.getAsJsonObject(uuidStr);
+                PlayerData pd = new PlayerData(uuid);
+                pd.setKills(data.get("kills").getAsDouble());
+                pd.setDeaths(data.get("deaths").getAsDouble());
+                pd.setPower(data.get("power").getAsDouble());
+                if (data.has("clan") && !data.get("clan").isJsonNull()) {
+                    String clanName = data.get("clan").getAsString();
+                    String role = data.get("clanRole").getAsString();
+                    if (clanManager.clanExists(clanName)) {
+                        Clan clan = clanManager.getClan(clanName);
+                        pd.setClan(clan);
+                        pd.setClanRole(role);
+                    }
+                }
+                playerDataMap.put(uuid, pd);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void savePlayerData() {
+        JsonObject root = new JsonObject();
+        JsonObject players = new JsonObject();
+        for (UUID uuid : playerDataMap.keySet()) {
+            PlayerData pd = playerDataMap.get(uuid);
+            JsonObject obj = new JsonObject();
+            obj.addProperty("kills", pd.getKills());
+            obj.addProperty("deaths", pd.getDeaths());
+            obj.addProperty("power", pd.getPower());
+            obj.addProperty("clan", pd.getClan() != null ? pd.getClan().getName() : null);
+            obj.addProperty("clanRole", pd.getClanRole());
+            players.add(uuid.toString(), obj);
+        }
+        root.add("players", players);
+        try (Writer writer = new FileWriter(new File(getDataFolder(), "playerdata.json"))) {
+            gson.toJson(root, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveClaims() {
+        JsonObject root = new JsonObject();
+        for (Chunk chunk : claimManager.getAllClaims().keySet()) {
+            String key = claimManager.getClaimKey(chunk);
+            root.addProperty(key, claimManager.getClaimOwner(chunk));
+        }
+        try (Writer writer = new FileWriter(new File(getDataFolder(), "claims.json"))) {
+            gson.toJson(root, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void loadClaims() {
+        File file = new File(getDataFolder(), "claims.json");
+        if (!file.exists())
+            return;
+        try (Reader reader = new FileReader(file)) {
+            JsonObject root = gson.fromJson(reader, JsonObject.class);
+            for (String key : root.keySet()) {
+                String[] parts = key.split(";");
+                if (parts.length != 3)
+                    continue;
+                String world = parts[0];
+                int x = Integer.parseInt(parts[1]);
+                int z = Integer.parseInt(parts[2]);
+                Chunk chunk = Bukkit.getWorld(world).getChunkAt(x, z);
+                String clan = root.get(key).getAsString();
+                claimManager.forceClaimChunk(clan, chunk);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
