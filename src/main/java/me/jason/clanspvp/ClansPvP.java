@@ -7,7 +7,6 @@ import java.util.*;
 import me.jason.clanspvp.commands.ClanCommand;
 import me.jason.clanspvp.commands.ClanMapCommand;
 import me.jason.clanspvp.commands.ClanTabCompleter;
-import me.jason.clanspvp.commands.ClaimCommand;
 import me.jason.clanspvp.listeners.ClaimVisualFeedbackListener;
 import me.jason.clanspvp.listeners.PlayerDeathListener;
 import me.jason.clanspvp.listeners.PlayerKillListener;

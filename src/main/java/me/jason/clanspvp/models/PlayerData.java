@@ -7,9 +7,11 @@ public class PlayerData {
     private final UUID uuid;
     private double kills = 0;
     private double deaths = 0;
-    private double power = 5.0; // standaard 5.0 power
+    private double power = 5.0;
     private Clan clan;
     private String clanRole;
+    private String pendingInvite;
+    private String pendingJoinRequest;
 
     public PlayerData(UUID uuid) {
         this.uuid = uuid;
@@ -55,7 +57,6 @@ public class PlayerData {
         this.power = power;
     }
 
-    // Nieuw:
     public void setKills(double kills) {
         this.kills = kills;
     }
@@ -70,5 +71,29 @@ public class PlayerData {
 
     public double getDeaths() {
         return deaths;
+    }
+
+    public String getPendingInvite() {
+        return pendingInvite;
+    }
+
+    public void setPendingInvite(String pendingInvite) {
+        this.pendingInvite = pendingInvite;
+    }
+
+    public void clearPendingInvite() {
+        this.pendingInvite = null;
+    }
+
+    public String getPendingJoinRequest() {
+        return pendingJoinRequest;
+    }
+
+    public void setPendingJoinRequest(String pendingJoinRequest) {
+        this.pendingJoinRequest = pendingJoinRequest;
+    }
+
+    public void clearPendingJoinRequest() {
+        this.pendingJoinRequest = null;
     }
 }

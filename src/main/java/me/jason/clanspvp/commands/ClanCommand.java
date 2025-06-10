@@ -51,6 +51,10 @@ public class ClanCommand implements CommandExecutor {
             player.sendMessage(ChatUtil.color("&e→ &7/clan info &8– &fView clan information"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan vault &8– &fOpen your clan vault"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan invite &8<&fplayer&8> &8– &fInvite a player"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan accept &8– &fAccept a clan invite"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan deny &8– &fDeny a clan invite"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan join &8<&fclan&8> &8– &fRequest to join a clan"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan cancel &8– &fCancel your join request"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan leave &8– &fLeave your current clan"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan disband &8– &fDisband your clan (leader only)"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan confirm &8– &fConfirm disbanding your clan"));
@@ -92,6 +96,46 @@ public class ClanCommand implements CommandExecutor {
             } else {
                 player.sendMessage(ChatUtil.color("&c✗ Failed to claim the chunk."));
             }
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("join")) {
+            if (data.getClan() != null) {
+                player.sendMessage(ChatUtil.color("&c✗ You are already in a clan."));
+                return true;
+            }
+
+            if (args.length < 2) {
+                player.sendMessage(ChatUtil.color("&c✗ Usage: /clan join <clan>"));
+                return true;
+            }
+
+            if (data.getPendingJoinRequest() != null) {
+                player.sendMessage(ChatUtil.color("&c✗ You already have a pending join request."));
+                return true;
+            }
+
+            String clanName = args[1];
+            Clan clan = clanManager.getClan(clanName);
+            if (clan == null) {
+                player.sendMessage(ChatUtil.color("&c✗ That clan does not exist."));
+                return true;
+            }
+
+            data.setPendingJoinRequest(clanName);
+            player.sendMessage(
+                    ChatUtil.color("&a✓ Join request sent to clan &e" + clanName + "&a. Wait for approval."));
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("cancel")) {
+            if (data.getPendingJoinRequest() == null) {
+                player.sendMessage(ChatUtil.color("&c✗ You have no pending join request."));
+                return true;
+            }
+
+            data.clearPendingJoinRequest();
+            player.sendMessage(ChatUtil.color("&a✓ Join request cancelled."));
             return true;
         }
 
@@ -283,6 +327,175 @@ public class ClanCommand implements CommandExecutor {
             plugin.getClanManager().unregisterClan(clan.getName());
             player.sendMessage(ChatUtil.color("&a✓ Clan disbanded successfully."));
             return true;
+        }
+
+        if (args[0].equalsIgnoreCase("invite")) {
+            if (data.getClan() == null) {
+                player.sendMessage(ChatUtil.color("&c✗ You are not in a clan."));
+                return true;
+            }
+
+            if (!"LEADER".equals(data.getClanRole()) && !"OFFICER".equals(data.getClanRole())) {
+                player.sendMessage(ChatUtil.color("&c✗ Only the leader or officers can invite players."));
+                return true;
+            }
+
+            if (args.length < 2) {
+                player.sendMessage(ChatUtil.color("&c✗ Usage: /clan invite <player>"));
+                return true;
+            }
+
+            Player target = Bukkit.getPlayer(args[1]);
+            if (target == null || !target.isOnline()) {
+                player.sendMessage(ChatUtil.color("&c✗ That player is not online."));
+                return true;
+            }
+
+            PlayerData targetData = plugin.getPlayerData(target.getUniqueId());
+            if (targetData.getClan() != null) {
+                player.sendMessage(ChatUtil.color("&c✗ That player is already in a clan."));
+                return true;
+            }
+
+            Clan clan = data.getClan();
+            targetData.setPendingInvite(clan.getName());
+
+            target.sendMessage(ChatUtil.color("&eYou have been invited to join the clan &6" + clan.getName() + "&e!"));
+            target.sendMessage(ChatUtil.color("&7Type &a/clan accept &7to join."));
+            player.sendMessage(ChatUtil.color("&a✓ Invitation sent to &e" + target.getName()));
+
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("accept")) {
+            if (data.getClan() != null) {
+                player.sendMessage(ChatUtil.color("&c✗ You are already in a clan."));
+                return true;
+            }
+
+            String pendingInvite = data.getPendingInvite();
+            if (pendingInvite == null) {
+                player.sendMessage(ChatUtil.color("&c✗ You have no pending invites."));
+                return true;
+            }
+
+            Clan clan = clanManager.getClan(pendingInvite);
+            if (clan == null) {
+                player.sendMessage(ChatUtil.color("&c✗ The clan that invited you no longer exists."));
+                data.clearPendingInvite();
+                return true;
+            }
+
+            clan.addMember(player.getUniqueId(), "RECRUIT");
+            data.setClan(clan);
+            data.setClanRole("RECRUIT");
+            data.clearPendingInvite();
+
+            player.sendMessage(ChatUtil.color("&a✓ You have joined the clan &e" + clan.getName()));
+            ClanScoreboard.showClanScoreboard(player, clan, data);
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("deny")) {
+            if (data.getPendingInvite() == null) {
+                player.sendMessage(ChatUtil.color("&c✗ You have no pending invites."));
+                return true;
+            }
+
+            data.clearPendingInvite();
+            player.sendMessage(ChatUtil.color("&a✓ Clan invitation denied."));
+            return true;
+        }
+
+        // Voeg dit toe in je ClanCommand.java bij de onCommand(...) methode
+        if (args[0].equalsIgnoreCase("accept") || args[0].equalsIgnoreCase("deny")) {
+            if (data.getClan() != null
+                    && ("LEADER".equals(data.getClanRole()) || "OFFICER".equals(data.getClanRole()))) {
+                // Clan leader/officer accepteert of weigert een join request
+                if (args.length < 2) {
+                    player.sendMessage(ChatUtil.color("&c✗ Usage: /clan " + args[0] + " <player>"));
+                    return true;
+                }
+
+                Player target = Bukkit.getPlayer(args[1]);
+                if (target == null || !target.isOnline()) {
+                    player.sendMessage(ChatUtil.color("&c✗ That player is not online."));
+                    return true;
+                }
+
+                PlayerData targetData = plugin.getPlayerData(target.getUniqueId());
+
+                if (targetData.getClan() != null) {
+                    player.sendMessage(ChatUtil.color("&c✗ That player is already in a clan."));
+                    return true;
+                }
+
+                if (!data.getClan().getName().equals(targetData.getPendingJoinRequest())) {
+                    player.sendMessage(ChatUtil.color("&c✗ That player has not requested to join your clan."));
+                    return true;
+                }
+
+                if (args[0].equalsIgnoreCase("accept")) {
+                    Clan clan = data.getClan();
+                    targetData.setClan(clan);
+                    targetData.setClanRole("RECRUIT");
+                    clan.addMember(target.getUniqueId(), "RECRUIT");
+                    targetData.clearPendingJoinRequest();
+
+                    player.sendMessage(
+                            ChatUtil.color("&a✓ You have accepted &e" + target.getName() + "&a into your clan."));
+                    target.sendMessage(
+                            ChatUtil.color("&a✓ Your join request has been accepted by &e" + player.getName()));
+                    ClanScoreboard.showClanScoreboard(target, clan, targetData);
+                } else {
+                    targetData.clearPendingJoinRequest();
+                    player.sendMessage(ChatUtil.color("&a✓ You have denied the join request of &e" + target.getName()));
+                    target.sendMessage(ChatUtil
+                            .color("&c✗ Your join request to &e" + data.getClan().getName() + " &cwas denied."));
+                }
+
+                return true;
+            }
+
+            // Speler accepteert of weigert een invite
+            if ("accept".equalsIgnoreCase(args[0])) {
+                if (data.getClan() != null) {
+                    player.sendMessage(ChatUtil.color("&c✗ You are already in a clan."));
+                    return true;
+                }
+
+                String pendingInvite = data.getPendingInvite();
+                if (pendingInvite == null) {
+                    player.sendMessage(ChatUtil.color("&c✗ You have no pending invites."));
+                    return true;
+                }
+
+                Clan clan = clanManager.getClan(pendingInvite);
+                if (clan == null) {
+                    player.sendMessage(ChatUtil.color("&c✗ The clan that invited you no longer exists."));
+                    data.clearPendingInvite();
+                    return true;
+                }
+
+                clan.addMember(player.getUniqueId(), "RECRUIT");
+                data.setClan(clan);
+                data.setClanRole("RECRUIT");
+                data.clearPendingInvite();
+
+                player.sendMessage(ChatUtil.color("&a✓ You have joined the clan &e" + clan.getName()));
+                ClanScoreboard.showClanScoreboard(player, clan, data);
+                return true;
+
+            } else if ("deny".equalsIgnoreCase(args[0])) {
+                if (data.getPendingInvite() == null) {
+                    player.sendMessage(ChatUtil.color("&c✗ You have no pending invites."));
+                    return true;
+                }
+
+                data.clearPendingInvite();
+                player.sendMessage(ChatUtil.color("&a✓ Clan invitation denied."));
+                return true;
+            }
         }
 
         if (args[0].equalsIgnoreCase("promote") || args[0].equalsIgnoreCase("demote")) {

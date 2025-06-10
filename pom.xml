@@ -43,6 +43,20 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- Kyori Adventure API -->
+    <dependency>
+        <groupId>net.kyori</groupId>
+        <artifactId>adventure-api</artifactId>
+        <version>4.14.0</version>
+    </dependency>
+
+    <!-- Kyori Adventure Platform voor Bukkit (nodig voor component support met Spigot/Paper) -->
+    <dependency>
+        <groupId>net.kyori</groupId>
+        <artifactId>adventure-platform-bukkit</artifactId>
+        <version>4.3.2</version>
+    </dependency>
+
     <!-- Vault API -->
     <dependency>
         <groupId>com.github.MilkBowl</groupId>

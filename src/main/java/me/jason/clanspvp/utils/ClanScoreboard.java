@@ -54,7 +54,7 @@ public class ClanScoreboard {
     public static void showNoClanScoreboard(Player player) {
         ScoreboardManager manager = Bukkit.getScoreboardManager();
         Scoreboard board = manager.getNewScoreboard();
-        Objective obj = board.registerNewObjective("noclan", "dummy", ChatColor.GOLD + "✦ Clan Info ✦");
+        Objective obj = board.registerNewObjective("claninfo", "dummy", ChatColor.GOLD + "✦ Clan Info ✦");
         obj.setDisplaySlot(DisplaySlot.SIDEBAR);
 
         obj.getScore(ChatColor.GRAY + " ").setScore(2);
