@@ -1,63 +1,68 @@
 # ⚔️ ClansPvP
 
-**ClansPvP** is a powerful Minecraft plugin for PvP servers featuring clans, land claiming, raids, power mechanics, vaults, scoreboard stats, and an ASCII-style territory map. Perfect for hardcore PvP servers with structured group gameplay and modern, styled UI.
+**ClansPvP** is a feature-rich Minecraft plugin built for PvP servers, offering a complete clan system, land claiming, raid mechanics, power management, shared vaults, scoreboard integration, and an ASCII-style map. Ideal for structured group gameplay on competitive servers with a clean and modern UI.
 
 ---
 
 ## 🚀 Features
 
-✔️ **Complete Clan System**  
-Advanced roles, invitations, promotions, demotions, and safe clan disbanding.
+✔️ **Full Clan System**  
+Create clans, manage roles (Leader, Officer, Member, Recruit), invite players, promote/demote members, and disband clans with confirmation.
 
-✔️ **Promotion & Demotion System**  
-Use `/clan promote` and `/clan demote` to manage member ranks. Safety rules prevent the last remaining leader from demoting themselves.
+✔️ **Rank Management**  
+Promote or demote members safely with `/clan promote` and `/clan demote`. Leaders cannot demote themselves if they’re the last leader.
 
-✔️ **Chunk-Based Land Claiming**  
-Conquer and protect 16x16 chunks for your clan using `/clan claim`, with claim limits based on clan size.
+✔️ **Land Claiming (16x16 Chunks)**  
+Secure territory for your clan using `/clan claim`. Claim limits scale with the number of clan members.
 
-✔️ **Claim Statistics in Scoreboard & Info**  
-Displays how many chunks your clan owns versus the allowed limit, viewable via scoreboard or `/clan info`.
+✔️ **Live Scoreboard Integration**  
+Displays clan power, member count, and land claims directly on the sidebar scoreboard and via `/clan info`.
 
-✔️ **Clan Vault System**  
-Shared storage for your entire clan using `/clan vault`.
+✔️ **Shared Clan Vault**  
+Access a central storage vault with `/clan vault`. Donors can receive expanded slots.
 
-✔️ **Clan Land ASCII Map**  
-Visual map overview using `/clanmap`, showing:
-- Your territory (green with clan tag)
-- Enemies (red)
-- Allies (purple)
-- Free land (gray)
+✔️ **Visual ASCII Clan Map**  
+Use `/clanmap` to see a stylized grid showing:  
+- 🟩 Your territory (`[TAG]`)  
+- 🟥 Enemy territory  
+- 🟪 Allies  
+- ⬜ Unclaimed land  
+- ➕ Your location  
 
-✔️ **KDR Requirement** *(optional)*  
-Require a minimum Kill/Death Ratio to create a clan.
+✔️ **KDR Requirement (Optional)**  
+Require players to meet a minimum Kill/Death Ratio to create a clan.
 
-✔️ **Raid System**  
-Start, check, and stop raids with `/clan raid start|check|stop`. Only authorized roles can control raids.
+✔️ **Clan Raids**  
+Leaders and Officers can manage raid sessions using `/clan raid start`, `check`, or `stop`.
 
-✔️ **Donor Bonuses**  
-Extra vault slots and power for users with special permissions.
+✔️ **Donor Benefits**  
+Grant special vault sizes or extra power to specific permission groups.
 
-✔️ **Modern UI**  
-Professionally styled messages with color codes, Unicode separators, and visual icons.
+✔️ **Clean Modern UI**  
+Styled messages with Unicode separators, color-coded output, and clear feedback.
 
 ---
 
 ## 💬 Main Commands
 
 ```
-/clan create <name> [tag]     → Create a new clan
-/clan info                    → View your current clan and stats
-/clan vault                   → Open the clan vault
-/clan invite <player>         → Invite a player
-/clan leave                   → Leave your clan
-/clan promote <player>        → Promote a member (RECRUIT → MEMBER → OFFICER)
-/clan demote <player>         → Demote a member (OFFICER → MEMBER → RECRUIT)
-/clan disband                 → Disband your clan (leader only)
-/clan confirm                 → Confirm disband action
-/clan claim                   → Claim the land you’re standing on
-/clan unclaim                 → Unclaim the land you’re standing on
-/clan raid start|stop|check   → Manage clan raids
-/clanmap                      → View ASCII map of clan territories
+/clan create <name> [tag] → Create a new clan
+/clan info → View your clan details
+/clan vault → Access shared clan storage
+/clan invite <player> → Invite a player to your clan
+/clan join <clan> → Request to join a clan
+/clan cancel → Cancel a join request
+/clan accept <player> → Accept a player’s join request
+/clan deny <player> → Deny a player’s join request
+/clan leave → Leave your current clan
+/clan promote <player> → Promote a member (e.g., RECRUIT → MEMBER)
+/clan demote <player> → Demote a member
+/clan disband → Disband your clan (leader only)
+/clan confirm → Confirm disband action
+/clan claim → Claim land
+/clan unclaim → Unclaim land
+/clan raid start|stop|check → Manage raid events
+/clanmap → View clan map overview
 ```
 
 ---
