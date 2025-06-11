@@ -17,17 +17,29 @@ public class ClanTabCompleter implements TabCompleter {
         if (args.length == 1) {
             return Arrays.asList(
                     "create", "info", "vault", "invite", "leave", "promote", "demote",
-                    "claim", "unclaim", "disband", "setwarp", "warp", "raid", "accept", "deny", "join", "cancel");
+                    "claim", "unclaim", "disband", "setwarp", "warp", "raid",
+                    "accept", "deny", "join", "cancel", "friendlyfire", "reload", "ally");
         }
 
         if (args.length == 2) {
             String sub = args[0].toLowerCase();
 
+            // Subcommand options for /clan raid
             if (sub.equals("raid")) {
                 return Arrays.asList("start", "stop", "check");
             }
 
-            // Suggest online player names for commands that expect a player
+            // Subcommand options for /clan friendlyfire
+            if (sub.equals("friendlyfire")) {
+                return Arrays.asList("on", "off");
+            }
+
+            // Subcommand options for /clan ally
+            if (sub.equals("ally")) {
+                return Arrays.asList("accept", "deny"); // Or suggest clan names if preferred
+            }
+
+            // Suggest online player names
             if (Arrays.asList("invite", "promote", "demote", "accept", "deny").contains(sub)) {
                 return Bukkit.getOnlinePlayers().stream()
                         .map(Player::getName)

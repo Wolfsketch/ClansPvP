@@ -48,22 +48,20 @@ public class ClanCommand implements CommandExecutor {
             player.sendMessage(" ");
             player.sendMessage(ChatUtil.color("&6                         ClansPvP Help"));
             player.sendMessage(" ");
-            player.sendMessage(ChatUtil.color("&e→ &7/clan create &8<&fname&8> [&ftag&8] &8– &fCreate a new clan"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan info &8– &fView clan information"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan vault &8– &fOpen your clan vault"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan invite &8<&fplayer&8> &8– &fInvite a player"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan accept &8– &fAccept a clan invite"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan deny &8– &fDeny a clan invite"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan join &8<&fclan&8> &8– &fRequest to join a clan"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan cancel &8– &fCancel your join request"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan leave &8– &fLeave your current clan"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan disband &8– &fDisband your clan (leader only)"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan confirm &8– &fConfirm disbanding your clan"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan promote &8<&fplayer&8> &8– &fPromote a member"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan demote &8<&fplayer&8> &8– &fDemote a member"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan claim &8– &fClaim the land you stand on"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan unclaim &8– &fUnclaim the land you stand on"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan raid start | stop | check &8– &fManage raids"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan create <name> [tag] &8– &fCreate a new clan"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan info &8– &fView your clan information"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan vault &8– &fOpen the clan vault"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan invite | accept | deny <player> &8– &fManage invites"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan join|cancel <clan> &8– &fJoin or cancel request"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan leave &8– &fLeave your clan"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan disband | confirm &8– &fDisband your clan"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan promote | demote <player> &8– &fRank members"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan claim | unclaim &8– &fManage land claims"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan raid start | stop | check &8– &fRaid commands"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan setwarp | warp <name> &8– &fTeleportation"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan friendlyfire <on|off> &8– &fToggle PvP in clan"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan ally <name | accept | deny> &8– &fManage allies"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan reload &8– &fReload config (admin only)"));
             player.sendMessage(" ");
             return true;
         }
@@ -251,6 +249,33 @@ public class ClanCommand implements CommandExecutor {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("friendlyfire")) {
+            Clan clan = data.getClan();
+            if (clan == null) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
+                return true;
+            }
+
+            if (!"LEADER".equals(data.getClanRole())) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("only-leader-friendlyfire")));
+                return true;
+            }
+
+            if (args.length < 2 ||
+                    (!args[1].equalsIgnoreCase("on") && !args[1].equalsIgnoreCase("off"))) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("usage-clan-friendlyfire")));
+                return true;
+            }
+
+            boolean enable = args[1].equalsIgnoreCase("on");
+            clan.setAllowFriendlyFire(enable);
+            plugin.saveClans();
+
+            String messageKey = enable ? "friendlyfire-enabled" : "friendlyfire-disabled";
+            player.sendMessage(ChatUtil.color(ConfigManager.getMessage(messageKey)));
+            return true;
+        }
+
         if (args[0].equalsIgnoreCase("info")) {
             if (data.getClan() == null) {
                 ClanScoreboard.showNoClanScoreboard(player);
@@ -280,6 +305,17 @@ public class ClanCommand implements CommandExecutor {
             int maxClaims = ConfigManager.get().getInt("claiming.max-chunks-per-clan-member")
                     * clanManager.getMembers(clan).size();
             player.sendMessage(ChatUtil.color("&7Claims:     &f" + claimedChunks + "&7 / &f" + maxClaims));
+
+            Set<String> allies = clan.getAllies();
+            if (allies.isEmpty()) {
+                player.sendMessage(ChatUtil.color("&7Allies:     &cNone"));
+            } else {
+                int limit = 3;
+                List<String> allyList = new ArrayList<>(allies);
+                String shown = allyList.stream().limit(limit).collect(Collectors.joining(", "));
+                String suffix = allyList.size() > limit ? " &7+&f" + (allyList.size() - limit) + " more" : "";
+                player.sendMessage(ChatUtil.color("&7Allies:     &b" + shown + suffix));
+            }
 
             player.sendMessage(" ");
 
@@ -388,6 +424,91 @@ public class ClanCommand implements CommandExecutor {
                 }
             }.runTaskLater(plugin, 20 * 30);
 
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("ally")) {
+            if (args.length < 2) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("usage-clan-ally")));
+                return true;
+            }
+
+            Clan myClan = data.getClan();
+            if (myClan == null) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
+                return true;
+            }
+
+            if (!"LEADER".equals(data.getClanRole())) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("only-leader-can-ally")));
+                return true;
+            }
+
+            String subArg = args[1];
+
+            if (subArg.equalsIgnoreCase("accept")) {
+                String requester = clanManager.getRequestingClan(myClan.getName());
+                if (requester == null) {
+                    player.sendMessage(ChatUtil.color(ConfigManager.getMessage("no-pending-ally-request")));
+                    return true;
+                }
+
+                clanManager.addAlly(myClan.getName(), requester);
+                plugin.saveClans();
+                clanManager.removeAllyRequest(myClan.getName());
+
+                player.sendMessage(
+                        ChatUtil.color(ConfigManager.getMessage("ally-accepted").replace("%clan%", requester)));
+                Clan other = clanManager.getClan(requester);
+                if (other != null) {
+                    Player leader = Bukkit.getPlayer(other.getLeader());
+                    if (leader != null)
+                        leader.sendMessage(ChatUtil.color(
+                                ConfigManager.getMessage("ally-request-accepted").replace("%clan%", myClan.getName())));
+                }
+                return true;
+            }
+
+            if (subArg.equalsIgnoreCase("deny")) {
+                String requester = clanManager.getRequestingClan(myClan.getName());
+                if (requester == null) {
+                    player.sendMessage(ChatUtil.color(ConfigManager.getMessage("no-pending-ally-request")));
+                    return true;
+                }
+
+                clanManager.removeAllyRequest(myClan.getName());
+                player.sendMessage(
+                        ChatUtil.color(ConfigManager.getMessage("ally-denied").replace("%clan%", requester)));
+                return true;
+            }
+
+            // default: /clan ally <name>
+            String targetClan = subArg;
+            if (!clanManager.clanExists(targetClan)) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-not-exist")));
+                return true;
+            }
+
+            if (clanManager.areAllies(myClan.getName(), targetClan)) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("already-allies")));
+                return true;
+            }
+
+            if (clanManager.hasPendingRequest(targetClan)) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("ally-request-already-sent")));
+                return true;
+            }
+
+            clanManager.sendAllyRequest(myClan.getName(), targetClan);
+            Clan target = clanManager.getClan(targetClan);
+            Player targetLeader = Bukkit.getPlayer(target.getLeader());
+            if (targetLeader != null) {
+                targetLeader.sendMessage(ChatUtil
+                        .color(ConfigManager.getMessage("ally-request-received").replace("%clan%", myClan.getName())));
+            }
+
+            player.sendMessage(
+                    ChatUtil.color(ConfigManager.getMessage("ally-request-sent").replace("%clan%", targetClan)));
             return true;
         }
 

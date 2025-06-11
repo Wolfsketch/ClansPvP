@@ -8,6 +8,12 @@ public class ClanManager {
 
     private final Map<String, Clan> clans = new HashMap<>(); // name → Clan
     private final Map<String, List<UUID>> clanMembers = new HashMap<>(); // name → members
+    private final Map<String, Set<String>> allies = new HashMap<>(); // name → set of ally names
+    private final Map<String, String> pendingAllyRequests = new HashMap<>(); // targetClan → requestingClan
+
+    // ------------------------
+    // CLAN REGISTER/LOOKUP
+    // ------------------------
 
     public void registerClan(Clan clan) {
         String name = clan.getName().toLowerCase();
@@ -16,9 +22,18 @@ public class ClanManager {
     }
 
     public void unregisterClan(String name) {
-        name = name.toLowerCase();
-        clans.remove(name);
-        clanMembers.remove(name);
+        final String lowerName = name.toLowerCase();
+
+        clans.remove(lowerName);
+        clanMembers.remove(lowerName);
+        allies.remove(lowerName);
+        pendingAllyRequests.remove(lowerName);
+
+        for (Set<String> allySet : allies.values()) {
+            allySet.remove(name);
+        }
+
+        pendingAllyRequests.entrySet().removeIf(entry -> entry.getValue().equalsIgnoreCase(name));
     }
 
     public Clan getClan(String name) {
@@ -28,6 +43,14 @@ public class ClanManager {
     public boolean clanExists(String name) {
         return clans.containsKey(name.toLowerCase());
     }
+
+    public Collection<Clan> getAllClans() {
+        return clans.values();
+    }
+
+    // ------------------------
+    // CLAN MEMBERS
+    // ------------------------
 
     public void addMember(Clan clan, UUID uuid) {
         String name = clan.getName().toLowerCase();
@@ -54,7 +77,46 @@ public class ClanManager {
         return getClanByMember(uuid);
     }
 
-    public Collection<Clan> getAllClans() {
-        return clans.values();
+    // ------------------------
+    // ALLY MANAGEMENT
+    // ------------------------
+
+    public void sendAllyRequest(String fromClan, String toClan) {
+        pendingAllyRequests.put(toClan.toLowerCase(), fromClan.toLowerCase());
     }
+
+    public boolean hasPendingRequest(String targetClan) {
+        return pendingAllyRequests.containsKey(targetClan.toLowerCase());
+    }
+
+    public String getRequestingClan(String targetClan) {
+        return pendingAllyRequests.get(targetClan.toLowerCase());
+    }
+
+    public void removeAllyRequest(String targetClan) {
+        pendingAllyRequests.remove(targetClan.toLowerCase());
+    }
+
+    public void addAlly(String clanA, String clanB) {
+        Clan a = clans.get(clanA.toLowerCase());
+        Clan b = clans.get(clanB.toLowerCase());
+        if (a != null && b != null) {
+            a.addAlly(clanB); // voeg toe aan A
+            b.addAlly(clanA); // voeg ook toe aan B
+        }
+    }
+
+    public boolean areAllies(String clanA, String clanB) {
+        return allies.getOrDefault(clanA.toLowerCase(), Collections.emptySet()).contains(clanB.toLowerCase());
+    }
+
+    public Set<String> getAllies(String clanName) {
+        return allies.getOrDefault(clanName.toLowerCase(), Collections.emptySet());
+    }
+
+    public void removeAlly(String clanA, String clanB) {
+        allies.getOrDefault(clanA.toLowerCase(), Collections.emptySet()).remove(clanB.toLowerCase());
+        allies.getOrDefault(clanB.toLowerCase(), Collections.emptySet()).remove(clanA.toLowerCase());
+    }
+
 }

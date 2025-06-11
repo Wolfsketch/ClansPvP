@@ -2,8 +2,8 @@ package me.jason.clanspvp.models;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import me.jason.clanspvp.ClansPvP;
 
+import me.jason.clanspvp.ClansPvP;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -14,10 +14,8 @@ public class Clan {
     private final String name;
     private final String tag;
     private final UUID leader;
-    private Inventory vault;
-
-    // Role mapping: UUID -> ROLE (bv. LEADER, OFFICER, MEMBER, RECRUIT)
     private final Map<UUID, String> members = new HashMap<>();
+    private final Set<String> allies = new HashSet<>();
 
     // Raid
     private double raidX = 0;
@@ -25,12 +23,20 @@ public class Clan {
     private double raidZ = 0;
     private boolean raidActive = false;
 
+    // Vault (niet persistente inventaris)
+    private transient Inventory vault;
+
+    // Friendly fire toggle
+    private boolean allowFriendlyFire = false;
+
     public Clan(String name, String tag, UUID leader) {
         this.name = name;
         this.tag = tag;
         this.leader = leader;
-        members.put(leader, "LEADER"); // Leader bijmaken bij creatie
+        members.put(leader, "LEADER");
     }
+
+    // ========== BASISGEGEVENS ==========
 
     public String getName() {
         return name;
@@ -43,6 +49,8 @@ public class Clan {
     public UUID getLeader() {
         return leader;
     }
+
+    // ========== LEDEN ==========
 
     public void addMember(UUID uuid, String role) {
         members.put(uuid, role);
@@ -79,13 +87,15 @@ public class Clan {
         return members.keySet().stream()
                 .map(uuid -> ClansPvP.getInstance().getPlayerData(uuid))
                 .filter(Objects::nonNull)
-                .mapToDouble(PlayerData::getPower)
+                .mapToDouble(player -> player.getPower())
                 .sum();
     }
 
     public double getMaxPower() {
         return members.size() * 5.0;
     }
+
+    // ========== RAID LOCATIE ==========
 
     public void setRaidLocation(double x, double y, double z) {
         this.raidX = x;
@@ -114,6 +124,8 @@ public class Clan {
         this.raidActive = false;
     }
 
+    // ========== VAULT ==========
+
     public Inventory getVault() {
         if (vault == null || vault.getSize() != getVaultSize()) {
             vault = Bukkit.createInventory(null, getVaultSize(), ChatColor.GOLD + "Clan Vault");
@@ -134,5 +146,33 @@ public class Clan {
 
         int totalSlots = baseSlots + bonusSlots;
         return Math.min(54, ((int) Math.ceil(totalSlots / 9.0)) * 9);
+    }
+
+    // ========== ALLIES ==========
+
+    public Set<String> getAllies() {
+        return allies;
+    }
+
+    public void addAlly(String clanName) {
+        allies.add(clanName.toLowerCase());
+    }
+
+    public void removeAlly(String clanName) {
+        allies.remove(clanName.toLowerCase());
+    }
+
+    public boolean isAlliedWith(String clanName) {
+        return allies.contains(clanName.toLowerCase());
+    }
+
+    // ========== FRIENDLY FIRE ==========
+
+    public boolean isAllowFriendlyFire() {
+        return allowFriendlyFire;
+    }
+
+    public void setAllowFriendlyFire(boolean allowFriendlyFire) {
+        this.allowFriendlyFire = allowFriendlyFire;
     }
 }

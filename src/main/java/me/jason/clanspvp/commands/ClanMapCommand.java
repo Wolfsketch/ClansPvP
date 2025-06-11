@@ -43,7 +43,7 @@ public class ClanMapCommand implements CommandExecutor {
         int halfHeight = height / 2;
 
         String indent = "                       ";
-        String graySpacer = "§8                                               \n"; // clean horizontal bar
+        String graySpacer = "§8                                               \n"; // horizontal bar
 
         StringBuilder map = new StringBuilder();
         map.append(graySpacer);
@@ -59,20 +59,26 @@ public class ClanMapCommand implements CommandExecutor {
                 Chunk chunk = player.getWorld().getChunkAt(x, z);
 
                 if (x == centerX && z == centerZ) {
-                    row.append("&a+");
+                    row.append("&a+"); // player location
                 } else if (claimManager.isClaimed(chunk)) {
                     String owner = claimManager.getClaimOwner(chunk);
-                    if (playerClan != null && owner != null) {
-                        if (owner.equalsIgnoreCase(playerClan.getName())) {
-                            row.append("&a█"); // own land
+                    if (owner != null) {
+                        if (playerClan != null) {
+                            if (owner.equalsIgnoreCase(playerClan.getName())) {
+                                row.append("&a█"); // own land
+                            } else if (playerClan.isAlliedWith(owner)) {
+                                row.append("&d█"); // ally land
+                            } else {
+                                row.append("&c█"); // enemy land
+                            }
                         } else {
-                            row.append("&c█"); // enemy land
+                            row.append("&c█"); // claimed land, but player is clanless
                         }
                     } else {
-                        row.append("&c█");
+                        row.append("&c█"); // fallback for unknown
                     }
                 } else {
-                    row.append("&7░");
+                    row.append("&7░"); // free land
                 }
             }
 

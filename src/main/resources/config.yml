@@ -42,7 +42,7 @@ donor-bonus-vault:
 claiming:
   enabled: true
   use-whole-chunk: true
-  chunk-includes-full-height: true # Y-as volledige hoogte
+  chunk-includes-full-height: true
   allow-overclaiming: true
   max-chunks-per-clan-member: 1
   overclaim-penalty: true
@@ -60,6 +60,11 @@ clan-creation:
   min-kdr-to-create: 0
   allow-friendly-fire: false
   max-members-per-clan: 15
+
+# ─── Global Settings ──────────────────────────
+
+settings:
+  allow-friendly-fire-between-allies: false
 
 # ─── Clan Vault Settings ─────────────────────
 
@@ -125,6 +130,15 @@ messages:
   already-has-request: "&c✘ &7You already have a pending join request."
   already-in-clan: "&c✘ &7You are already in a clan."
 
+  already-allies: "&e✘ &7Your clan is already allied with &f%clan%&7."
+
+  ally-request-denied: "&c✘ &7You denied the ally request from &f%clan%&7."
+  ally-request-accepted: "&a✔ &7You accepted the ally request from &f%clan%&7."
+  ally-accepted: "&a✔ &7Your clan is now allied with &f%clan%&7."
+  ally-request-already-sent: "&e✘ &7You already sent an ally request to &f%clan%&7."
+  ally-request-sent: "&a✔ &7Ally request sent to &f%clan%&7. Waiting for confirmation."
+  ally-request-received: "&e✦ &7You received an ally request from &f%clan%&7. Type &a/clan ally accept &7or &c/clan ally deny."
+
   cannot-change-role: "&c✘ &7Cannot %action% this player further."
   claim-limit-reached: "&c✘ &7You cannot claim more land. &8(Max chunks reached)"
   clan-claim-already: "&c✘ &7This land is already claimed."
@@ -150,6 +164,9 @@ messages:
 
   demoted: "&e✦ &f%player% &7has been demoted."
 
+  friendlyfire-enabled: "&a✔ &7Friendly fire is now &cenabled &7for your clan."
+  friendlyfire-disabled: "&a✔ &7Friendly fire is now &adisabled &7for your clan."
+
   invite-instruction: "&7Type &a/clan accept &7to join."
   invite-received: "&eYou have been invited to join clan &6%clan%&e!"
   invite-sent: "&a✔ &7Invitation sent to &f%player%"
@@ -168,11 +185,14 @@ messages:
   no-permission: "&c✘ &7You do not have permission to do this."
   not-enough-kdr: "&c✘ &7Your K/D ratio is too low. Required: &e%kdr%"
   not-in-clan: "&c✘ &7You are not in a clan."
+  no-pending-ally-request: "&c✘ &7You have no pending ally requests."
 
   only-leader-cannot-demote: "&c✘ &7You are the only leader. You cannot demote yourself."
   only-leader-disband: "&c✘ &7Only the clan leader can disband the clan."
   only-leader-leave: "&c✘ &7As leader, use &e/clan disband &7to disband your clan."
   only-leader-or-officer: "&c✘ &7Only clan leaders or officers can perform this action."
+  only-leader-can-ally: "&c✘ &7Only the clan leader can perform this action."
+  only-leader-friendlyfire: "&c✘ &7Only the clan leader can change friendly fire settings."
 
   overclaimed-land: "&c⚠ &7An enemy has overclaimed part of your land!"
 
@@ -199,6 +219,8 @@ messages:
   usage-clan-join: "&c✘ &7Usage: &f/clan join <clan>"
   usage-clan-promote: "&c✘ &7Usage: &f/clan promote <player>"
   usage-clan-raid: "&c✘ &7Usage: &f/clan raid <start|stop|check>"
+  usage-clan-ally: "&c✘ &7Usage: &f/clan ally <name|accept|deny>"
+  usage-clan-friendlyfire: "&c✘ &7Usage: &f/clan friendlyfire <on|off>"
 
   vault-full: "&c✘ &7Clan vault is full!"
   vault-header: "&8─[ &bClan Vault &8]─"
