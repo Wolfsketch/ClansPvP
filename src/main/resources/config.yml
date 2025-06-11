@@ -122,30 +122,95 @@ raid:
 # ─── Messages (Styled UI) ─────────────────────
 
 messages:
-  clan-created: "&a✔ &7Clan &8[&e%tag%&8] &b%name% &7was successfully created!"
-  clan-exists: "&c✘ &7A clan with that name already exists."
+  already-has-request: "&c✘ &7You already have a pending join request."
+  already-in-clan: "&c✘ &7You are already in a clan."
+
+  cannot-change-role: "&c✘ &7Cannot %action% this player further."
   claim-limit-reached: "&c✘ &7You cannot claim more land. &8(Max chunks reached)"
-  no-permission: "&c✘ &7You do not have permission to do this."
-  clan-tag-too-long: "&c✘ &7Clan tag is too long. Max: &e%max% &7characters."
+  clan-claim-already: "&c✘ &7This land is already claimed."
+  clan-claim-fail: "&c✘ &7Failed to claim the land."
+  clan-claim-success: "&a✔ &7You successfully claimed this land for your clan!"
+
+  clan-created: "&a✔ &7Clan &8[&e%tag%&8] &b%name% &7was successfully created!"
+  clan-disband-confirm: "&a✔ &7Are you sure you want to disband your clan? Type &e/clan confirm &7within 30 seconds."
+  clan-disband-success: "&a✔ &7Clan disbanded successfully."
+  clan-disbanded: "&c✘ &7Clan &e%name% &7has been disbanded. All land unclaimed."
+  clan-disbanded-notify: "&c✘ &7Your clan has been disbanded."
+
+  clan-exists: "&c✘ &7A clan with that name already exists."
+  clan-header: "&8─[ &6Clan Info &8]─"
+  clan-not-exist: "&c✘ &7That clan does not exist."
   clan-not-found: "&c✘ &7Clan &f%name% &7was not found."
-  player-not-in-clan: "&c✘ &7You are not a member of any clan."
-  player-already-in-clan: "&c✘ &7You are already in a clan."
+  clan-tag-too-long: "&c✘ &7Clan tag is too long. Max: &e%max% &7characters."
+
+  clan-unclaim-fail: "&c✘ &7Failed to unclaim the land."
+  clan-unclaim-not-claimed: "&c✘ &7This land is not claimed."
+  clan-unclaim-not-owned: "&c✘ &7You can only unclaim your own clan's land."
+  clan-unclaim-success: "&a✔ &7Land has been unclaimed."
+
+  demoted: "&e✦ &f%player% &7has been demoted."
+
+  invite-instruction: "&7Type &a/clan accept &7to join."
+  invite-received: "&eYou have been invited to join clan &6%clan%&e!"
+  invite-sent: "&a✔ &7Invitation sent to &f%player%"
+
+  join-accepted: "&a✔ &7You have joined clan &e%clan%&7!"
+  join-accepted-by: "&a✔ &7You accepted &e%player% &7into your clan."
+  join-denied: "&a✔ &7You denied the join request from &e%player%."
+  join-request-cancelled: "&a✔ &7Join request cancelled."
+  join-request-denied: "&c✘ &7Your join request to &e%clan% &7was denied."
+  join-request-sent: "&a✔ &7Join request sent to clan &e%clan%&7. Wait for approval."
+
+  left-clan: "&a✔ &7You left your clan."
+
+  no-pending-invite: "&c✘ &7You have no pending invites."
+  no-pending-request: "&c✘ &7You have no pending join request."
+  no-permission: "&c✘ &7You do not have permission to do this."
+  not-enough-kdr: "&c✘ &7Your K/D ratio is too low. Required: &e%kdr%"
+  not-in-clan: "&c✘ &7You are not in a clan."
+
+  only-leader-cannot-demote: "&c✘ &7You are the only leader. You cannot demote yourself."
+  only-leader-disband: "&c✘ &7Only the clan leader can disband the clan."
+  only-leader-leave: "&c✘ &7As leader, use &e/clan disband &7to disband your clan."
+  only-leader-or-officer: "&c✘ &7Only clan leaders or officers can perform this action."
+
+  overclaimed-land: "&c⚠ &7An enemy has overclaimed part of your land!"
+
+  player-already-in-clan: "&c✘ &7That player is already in a clan."
+  player-invited: "&a✔ &7You invited &f%player% &7to your clan."
   player-joined-clan: "&a✔ &f%player% &7joined your clan!"
   player-left-clan: "&e✦ &f%player% &7has left your clan."
-  player-invited: "&a✔ &7You invited &f%player% &7to your clan."
-  not-enough-kdr: "&c✘ &7Your K/D ratio is too low. Required: &e%kdr%"
-  overclaimed-land: "&c⚠ &7An enemy has overclaimed part of your land!"
-  vault-opened: "&a✔ &7Clan vault opened."
-  vault-full: "&c✘ &7Clan vault is full!"
-  vault-item-added: "&a✔ &7Item added to vault."
-  clan-header: "&8─[ &6Clan Info &8]─"
-  vault-header: "&8─[ &bClan Vault &8]─"
-  clan-disbanded: "&c✘ &7Clan &e%name% &7has been disbanded. All land unclaimed."
+  player-not-in-clan: "&c✘ &7You are not a member of any clan."
+  player-not-in-your-clan: "&c✘ &7That player is not in your clan."
+  player-not-online: "&c✘ &7That player is not online."
+  player-not-requested-join: "&c✘ &7That player has not requested to join your clan."
+
   promoted: "&a✔ &f%player% &7has been promoted."
-  demoted: "&e✦ &f%player% &7has been demoted."
+
+  raid-location: "&7Location: &fX: %x% Y: %y% Z: %z%"
+  raid-not-allowed: "&c✘ &7Only clan leaders or officers can %action% raids."
+  raid-started: "&a✔ &7Raid started at your current location!"
+  raid-stopped: "&c✘ &7Raid has been stopped by &f%player%&7."
+
+  unknown-command: "&c✘ &7Unknown subcommand. Use &f/clan help"
+
+  usage-clan-demote: "&c✘ &7Usage: &f/clan demote <player>"
+  usage-clan-invite: "&c✘ &7Usage: &f/clan invite <player>"
+  usage-clan-join: "&c✘ &7Usage: &f/clan join <clan>"
+  usage-clan-promote: "&c✘ &7Usage: &f/clan promote <player>"
+  usage-clan-raid: "&c✘ &7Usage: &f/clan raid <start|stop|check>"
+
+  vault-full: "&c✘ &7Clan vault is full!"
+  vault-header: "&8─[ &bClan Vault &8]─"
+  vault-item-added: "&a✔ &7Item added to vault."
+  vault-opened: "&a✔ &7Clan vault opened."
+
+  warp-not-found: "&c✘ &7Warp &f%warp% &7does not exist."
   warp-set: "&a✔ &7Warp &f%warp% &7has been set."
   warp-teleport: "&b✦ &7Teleporting to warp &f%warp%..."
-  warp-not-found: "&c✘ &7Warp &f%warp% &7does not exist."
+
+  you-were-demoted: "&e✦ &7You have been demoted to &e%role%"
+  you-were-promoted: "&a✔ &7You have been promoted to &e%role%"
 
 # ─── UI Settings ──────────────────────────────
 

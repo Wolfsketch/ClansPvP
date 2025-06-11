@@ -4,11 +4,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 import me.jason.clanspvp.ClansPvP;
 
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+
 public class Clan {
 
     private final String name;
     private final String tag;
     private final UUID leader;
+    private Inventory vault;
 
     // Role mapping: UUID -> ROLE (bv. LEADER, OFFICER, MEMBER, RECRUIT)
     private final Map<UUID, String> members = new HashMap<>();
@@ -38,13 +44,16 @@ public class Clan {
         return leader;
     }
 
-    // --- Nieuw: Lid management ---
     public void addMember(UUID uuid, String role) {
         members.put(uuid, role);
     }
 
     public void removeMember(UUID uuid) {
         members.remove(uuid);
+    }
+
+    public void setMemberRole(UUID uuid, String role) {
+        members.put(uuid, role);
     }
 
     public Map<UUID, String> getMembers() {
@@ -55,7 +64,6 @@ public class Clan {
         return members.getOrDefault(uuid, "RECRUIT");
     }
 
-    // Leden per rol
     public List<UUID> getMembersByRole(String role) {
         return members.entrySet().stream()
                 .filter(e -> e.getValue().equalsIgnoreCase(role))
@@ -67,7 +75,6 @@ public class Clan {
         return new ArrayList<>(members.keySet());
     }
 
-    // --- Nieuw: Power systeem ---
     public double getPower() {
         return members.keySet().stream()
                 .map(uuid -> ClansPvP.getInstance().getPlayerData(uuid))
@@ -80,7 +87,6 @@ public class Clan {
         return members.size() * 5.0;
     }
 
-    // Raid locatie setters/getters (ongewijzigd)
     public void setRaidLocation(double x, double y, double z) {
         this.raidX = x;
         this.raidY = y;
@@ -106,5 +112,27 @@ public class Clan {
 
     public void stopRaid() {
         this.raidActive = false;
+    }
+
+    public Inventory getVault() {
+        if (vault == null || vault.getSize() != getVaultSize()) {
+            vault = Bukkit.createInventory(null, getVaultSize(), ChatColor.GOLD + "Clan Vault");
+        }
+        return vault;
+    }
+
+    public int getVaultSize() {
+        int baseSlots = 20;
+        int bonusSlots = 0;
+
+        for (UUID uuid : members.keySet()) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null && player.hasPermission("clanspvp.vault.bonus")) {
+                bonusSlots += 10;
+            }
+        }
+
+        int totalSlots = baseSlots + bonusSlots;
+        return Math.min(54, ((int) Math.ceil(totalSlots / 9.0)) * 9);
     }
 }

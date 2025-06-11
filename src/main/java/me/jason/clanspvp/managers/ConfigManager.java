@@ -12,6 +12,15 @@ public class ConfigManager {
     }
 
     public static String getMessage(String key) {
-        return plugin.getConfig().getString("messages." + key);
+        String msg = plugin.getConfig().getString("messages." + key);
+        if (msg == null) {
+            plugin.getLogger().warning("[ClansPvP] Missing message key: " + key);
+            return "&c✘ &7[Missing message: " + key + "]";
+        }
+        return msg;
+    }
+
+    public static void reload() {
+        plugin.reloadConfig();
     }
 }

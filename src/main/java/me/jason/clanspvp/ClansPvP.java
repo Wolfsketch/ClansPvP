@@ -12,10 +12,11 @@ import me.jason.clanspvp.listeners.PlayerDeathListener;
 import me.jason.clanspvp.listeners.PlayerKillListener;
 import me.jason.clanspvp.listeners.PlayerJoinListener;
 import me.jason.clanspvp.managers.ClanManager;
+import me.jason.clanspvp.managers.ConfigManager;
 import me.jason.clanspvp.managers.ClaimManager;
 import me.jason.clanspvp.models.Clan;
 import me.jason.clanspvp.models.PlayerData;
-
+import me.jason.clanspvp.utils.ClanScoreboard;
 import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.Bukkit;
@@ -243,4 +244,25 @@ public class ClansPvP extends JavaPlugin {
             getLogger().warning("Vault plugin not found!");
         }
     }
+
+    public void reload() {
+        // Reload config files
+        reloadConfig();
+        ConfigManager.reload(); // Zorg dat je een statische reload() in je ConfigManager hebt
+
+        // Eventueel herlaad clans of andere systemen als nodig
+        // clanManager.reloadClans(); // Indien je dat ondersteunt
+        // claimManager.reloadClaims(); // Indien van toepassing
+
+        // Herinitialiseer scoreboards of andere UI indien nodig
+        Bukkit.getOnlinePlayers().forEach(p -> {
+            PlayerData data = getPlayerData(p.getUniqueId());
+            if (data.getClan() != null) {
+                ClanScoreboard.showClanScoreboard(p, data.getClan(), data);
+            } else {
+                ClanScoreboard.showNoClanScoreboard(p);
+            }
+        });
+    }
+
 }

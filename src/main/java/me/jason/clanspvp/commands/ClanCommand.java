@@ -14,6 +14,7 @@ import org.bukkit.Chunk;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.Location;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,16 +68,29 @@ public class ClanCommand implements CommandExecutor {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("vault")) {
+            Clan clan = data.getClan();
+            if (clan == null) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
+                return true;
+            }
+
+            player.openInventory(clan.getVault());
+            player.sendMessage(ChatUtil.color("&a✓ Clan vault opened. You have access to &e"
+                    + clan.getVaultSize() + " &aslots."));
+            return true;
+        }
+
         if (args[0].equalsIgnoreCase("claim")) {
             Clan clan = data.getClan();
             if (clan == null) {
-                player.sendMessage(ChatUtil.color("&c✗ You are not in a clan."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
                 return true;
             }
 
             Chunk chunk = player.getLocation().getChunk();
             if (claimManager.isClaimed(chunk)) {
-                player.sendMessage(ChatUtil.color("&c✗ This land is already claimed."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-claim-already")));
                 return true;
             }
 
@@ -86,45 +100,114 @@ public class ClanCommand implements CommandExecutor {
                     * clanManager.getMembers(clan).size();
 
             if (currentClaims >= maxClaims) {
-                player.sendMessage(ChatUtil.color("&c✗ Your clan has reached the maximum number of claimed chunks."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("claim-limit-reached")));
                 return true;
             }
 
             boolean success = claimManager.claimChunk(clanName, chunk, maxClaims);
             if (success) {
-                player.sendMessage(ChatUtil.color("&a✓ You have successfully claimed this land for your clan!"));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-claim-success")));
             } else {
-                player.sendMessage(ChatUtil.color("&c✗ Failed to claim the chunk."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-claim-fail")));
             }
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("raid")) {
+            Clan clan = data.getClan();
+            if (clan == null) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
+                return true;
+            }
+            if (args.length < 2) {
+                player.sendMessage(ChatUtil.color("&c✗ Usage: /clan raid <start|stop|check>"));
+                return true;
+            }
+
+            String sub = args[1];
+            if (sub.equalsIgnoreCase("start")) {
+                if (!"LEADER".equals(data.getClanRole()) && !"OFFICER".equals(data.getClanRole())) {
+                    player.sendMessage(ChatUtil.color("&c✗ Only leaders or officers can start raids."));
+                    return true;
+                }
+
+                Location loc = player.getLocation();
+                int x = (int) loc.getX();
+                int y = (int) loc.getY();
+                int z = (int) loc.getZ();
+
+                clan.setRaidLocation(x, y, z);
+                player.sendMessage(ChatUtil.color("&a✓ Raid started at your current location!"));
+                player.sendMessage(ChatUtil.color("&7Location: &fX: " + x + " Y: " + y + " Z: " + z));
+
+                // Notify all other online clan members
+                for (UUID member : clan.getAllMembers()) {
+                    Player online = Bukkit.getPlayer(member);
+                    if (online != null && !online.getUniqueId().equals(player.getUniqueId())) {
+                        online.sendMessage(
+                                ChatUtil.color("&c⚔ A raid has been started by &6" + player.getName() + "&c!"));
+                        online.sendMessage(ChatUtil.color("&7Location: &fX: " + x + " Y: " + y + " Z: " + z));
+                    }
+                }
+                return true;
+            } else if (sub.equalsIgnoreCase("stop")) {
+                if (!"LEADER".equals(data.getClanRole()) && !"OFFICER".equals(data.getClanRole())) {
+                    player.sendMessage(ChatUtil.color("&c✗ Only leaders or officers can stop raids."));
+                    return true;
+                }
+                clan.stopRaid();
+                for (UUID member : clan.getAllMembers()) {
+                    Player online = Bukkit.getPlayer(member);
+                    if (online != null) {
+                        online.sendMessage(
+                                ChatUtil.color("&7⚠ The raid has been &cstopped&7 by &6" + player.getName() + "&7."));
+                    }
+                }
+                return true;
+
+            } else if (sub.equalsIgnoreCase("check")) {
+                if (!clan.isRaidActive()) {
+                    player.sendMessage(ChatUtil.color("&eNo raid is currently active."));
+                    return true;
+                }
+                player.sendMessage(ChatUtil.color("&6Raid Location:"));
+                player.sendMessage(ChatUtil.color("&7X: &f" + clan.getRaidX()));
+                player.sendMessage(ChatUtil.color("&7Y: &f" + clan.getRaidY()));
+                player.sendMessage(ChatUtil.color("&7Z: &f" + clan.getRaidZ()));
+                return true;
+
+            } else {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("unknown-command")));
+                return true;
+            }
+        }
+
         if (args[0].equalsIgnoreCase("join")) {
             if (data.getClan() != null) {
-                player.sendMessage(ChatUtil.color("&c✗ You are already in a clan."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("already-in-clan")));
                 return true;
             }
 
             if (args.length < 2) {
-                player.sendMessage(ChatUtil.color("&c✗ Usage: /clan join <clan>"));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("usage-clan-join")));
                 return true;
             }
 
             if (data.getPendingJoinRequest() != null) {
-                player.sendMessage(ChatUtil.color("&c✗ You already have a pending join request."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("already-has-request")));
                 return true;
             }
 
             String clanName = args[1];
             Clan clan = clanManager.getClan(clanName);
             if (clan == null) {
-                player.sendMessage(ChatUtil.color("&c✗ That clan does not exist."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-not-exist")));
                 return true;
             }
 
             data.setPendingJoinRequest(clanName);
             player.sendMessage(
-                    ChatUtil.color("&a✓ Join request sent to clan &e" + clanName + "&a. Wait for approval."));
+                    ChatUtil.color(ConfigManager.getMessage("join-request-sent").replace("%clan%", clanName)));
             return true;
         }
 
@@ -135,35 +218,35 @@ public class ClanCommand implements CommandExecutor {
             }
 
             data.clearPendingJoinRequest();
-            player.sendMessage(ChatUtil.color("&a✓ Join request cancelled."));
+            player.sendMessage(ChatUtil.color(ConfigManager.getMessage("join-request-cancelled")));
             return true;
         }
 
         if (args[0].equalsIgnoreCase("unclaim")) {
             Clan clan = data.getClan();
             if (clan == null) {
-                player.sendMessage(ChatUtil.color("&c✗ You are not in a clan."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
                 return true;
             }
 
             Chunk chunk = player.getLocation().getChunk();
 
             if (!claimManager.isClaimed(chunk)) {
-                player.sendMessage(ChatUtil.color("&c✗ This chunk is not claimed."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-unclaim-not-claimed")));
                 return true;
             }
 
             String owner = claimManager.getClaimOwner(chunk);
             if (!clan.getName().equalsIgnoreCase(owner)) {
-                player.sendMessage(ChatUtil.color("&c✗ You can only unclaim your own clan's territory."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-unclaim-not-owned")));
                 return true;
             }
 
             boolean success = claimManager.unclaimChunk(chunk);
             if (success) {
-                player.sendMessage(ChatUtil.color("&a✓ You have unclaimed this chunk."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-unclaim-success")));
             } else {
-                player.sendMessage(ChatUtil.color("&c✗ Failed to unclaim the chunk."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-unclaim-fail")));
             }
             return true;
         }
@@ -171,7 +254,7 @@ public class ClanCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("info")) {
             if (data.getClan() == null) {
                 ClanScoreboard.showNoClanScoreboard(player);
-                player.sendMessage(ChatUtil.color("&c✗ You are not in a clan."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
                 return true;
             }
 
@@ -266,7 +349,7 @@ public class ClanCommand implements CommandExecutor {
 
         if (args[0].equalsIgnoreCase("leave")) {
             if (data.getClan() == null) {
-                player.sendMessage(ChatUtil.color("&c✗ You are not in a clan."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
                 return true;
             }
 
@@ -285,8 +368,12 @@ public class ClanCommand implements CommandExecutor {
         }
 
         if (args[0].equalsIgnoreCase("disband")) {
-            if (data.getClan() == null || !"LEADER".equals(data.getClanRole())) {
-                player.sendMessage(ChatUtil.color("&c✗ Only the clan leader can disband the clan."));
+            if (data.getClan() == null) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
+                return true;
+            }
+            if (!"LEADER".equals(data.getClanRole())) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("only-leader-disband")));
                 return true;
             }
 
@@ -306,7 +393,7 @@ public class ClanCommand implements CommandExecutor {
 
         if (args[0].equalsIgnoreCase("confirm")) {
             if (!disbandConfirmations.containsKey(player.getUniqueId())) {
-                player.sendMessage(ChatUtil.color("&c✗ You have no disband request to confirm."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("no-pending-request")));
                 return true;
             }
 
@@ -325,13 +412,13 @@ public class ClanCommand implements CommandExecutor {
             }
 
             plugin.getClanManager().unregisterClan(clan.getName());
-            player.sendMessage(ChatUtil.color("&a✓ Clan disbanded successfully."));
+            player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-disband-success")));
             return true;
         }
 
         if (args[0].equalsIgnoreCase("invite")) {
             if (data.getClan() == null) {
-                player.sendMessage(ChatUtil.color("&c✗ You are not in a clan."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
                 return true;
             }
 
@@ -347,13 +434,13 @@ public class ClanCommand implements CommandExecutor {
 
             Player target = Bukkit.getPlayer(args[1]);
             if (target == null || !target.isOnline()) {
-                player.sendMessage(ChatUtil.color("&c✗ That player is not online."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("player-not-online")));
                 return true;
             }
 
             PlayerData targetData = plugin.getPlayerData(target.getUniqueId());
             if (targetData.getClan() != null) {
-                player.sendMessage(ChatUtil.color("&c✗ That player is already in a clan."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("player-already-in-clan")));
                 return true;
             }
 
@@ -369,7 +456,7 @@ public class ClanCommand implements CommandExecutor {
 
         if (args[0].equalsIgnoreCase("accept")) {
             if (data.getClan() != null) {
-                player.sendMessage(ChatUtil.color("&c✗ You are already in a clan."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("already-in-clan")));
                 return true;
             }
 
@@ -419,14 +506,14 @@ public class ClanCommand implements CommandExecutor {
 
                 Player target = Bukkit.getPlayer(args[1]);
                 if (target == null || !target.isOnline()) {
-                    player.sendMessage(ChatUtil.color("&c✗ That player is not online."));
+                    player.sendMessage(ChatUtil.color(ConfigManager.getMessage("player-not-online")));
                     return true;
                 }
 
                 PlayerData targetData = plugin.getPlayerData(target.getUniqueId());
 
                 if (targetData.getClan() != null) {
-                    player.sendMessage(ChatUtil.color("&c✗ That player is already in a clan."));
+                    player.sendMessage(ChatUtil.color(ConfigManager.getMessage("player-already-in-clan")));
                     return true;
                 }
 
@@ -460,7 +547,7 @@ public class ClanCommand implements CommandExecutor {
             // Speler accepteert of weigert een invite
             if ("accept".equalsIgnoreCase(args[0])) {
                 if (data.getClan() != null) {
-                    player.sendMessage(ChatUtil.color("&c✗ You are already in a clan."));
+                    player.sendMessage(ChatUtil.color(ConfigManager.getMessage("already-in-clan")));
                     return true;
                 }
 
@@ -500,7 +587,7 @@ public class ClanCommand implements CommandExecutor {
 
         if (args[0].equalsIgnoreCase("promote") || args[0].equalsIgnoreCase("demote")) {
             if (data.getClan() == null) {
-                player.sendMessage(ChatUtil.color("&c✗ You are not in a clan."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
                 return true;
             }
 
@@ -518,14 +605,14 @@ public class ClanCommand implements CommandExecutor {
 
             Player target = Bukkit.getPlayer(args[1]);
             if (target == null || !target.isOnline()) {
-                player.sendMessage(ChatUtil.color("&c✗ That player is not online."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("player-not-online")));
                 return true;
             }
 
             PlayerData targetData = plugin.getPlayerData(target.getUniqueId());
 
             if (targetData.getClan() == null || !targetData.getClan().getName().equals(clan.getName())) {
-                player.sendMessage(ChatUtil.color("&c✗ That player is not in your clan."));
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("player-not-in-your-clan")));
                 return true;
             }
 
@@ -553,11 +640,24 @@ public class ClanCommand implements CommandExecutor {
                 }
             }
 
-            targetData.setClanRole(roles.get(newIndex));
+            String newRole = roles.get(newIndex);
+            targetData.setClanRole(newRole);
+            clan.setMemberRole(target.getUniqueId(), newRole);
             target.sendMessage(ChatUtil.color("&a✓ You have been "
                     + (args[0].equalsIgnoreCase("promote") ? "promoted" : "demoted") + " to &e" + roles.get(newIndex)));
             player.sendMessage(ChatUtil.color("&a✓ " + target.getName() + " is now a(n) &e" + roles.get(newIndex)));
 
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("reload")) {
+            if (!player.isOp()) {
+                player.sendMessage(ChatUtil.color("&c✗ Only server operators can use this command."));
+                return true;
+            }
+
+            plugin.reload(); // Zie stap 2 hieronder
+            player.sendMessage(ChatUtil.color("&a✓ ClansPvP plugin has been reloaded."));
             return true;
         }
 

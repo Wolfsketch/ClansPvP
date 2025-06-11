@@ -3,34 +3,52 @@ main: me.jason.clanspvp.ClansPvP
 version: 1.0.0
 api-version: 1.21
 author: Wolfsketch
-description: Clan system with land claiming, power, vaults, and raid management.
+description: Complete clan system including land claiming, power, vaults, raids, warps, and admin tools.
 
 commands:
   clan:
-    description: Clan management and raid control command
-    usage: /clan <create|join|leave|info|vault|invite|raid>
+    description: Manage your clan (create, invite, claim, vault, promote, raid, reload, etc.)
+    usage: /clan <subcommand>
     aliases: []
 
   clanmap:
-    description: Shows a local map of nearby claimed land
+    description: Show a local map of nearby claimed chunks
     usage: /clanmap
     aliases: []
 
 permissions:
+  # General Permissions
   clanspvp.create:
-    description: Allows creation of a clan
+    description: Allows the creation of a clan
     default: true
 
   clanspvp.claim:
-    description: Allows claiming land for your clan
+    description: Allows claiming chunks for your clan
+    default: true
+
+  clanspvp.unclaim:
+    description: Allows unclaiming chunks for your clan
     default: true
 
   clanspvp.vault:
     description: Allows access to the clan vault
     default: true
 
+  clanspvp.vault.bonus:
+    description: Grants 10 extra vault slots for players with this permission
+    default: false
+
+  clanspvp.warp.set:
+    description: Allows setting a warp point
+    default: false
+
+  clanspvp.warp.use:
+    description: Allows using clan warps
+    default: true
+
+  # Raid Permissions
   clanspvp.raid.start:
-    description: Allows starting a raid (clan leader or authorized roles only)
+    description: Allows starting a raid (usually for leader or officer)
     default: false
 
   clanspvp.raid.stop:
@@ -41,6 +59,32 @@ permissions:
     description: Allows checking the current raid location
     default: true
 
+  # Clan Management
+  clanspvp.invite:
+    description: Allows inviting players to the clan
+    default: true
+
+  clanspvp.promote:
+    description: Allows promoting other clan members
+    default: false
+
+  clanspvp.demote:
+    description: Allows demoting other clan members
+    default: false
+
+  clanspvp.leave:
+    description: Allows a player to leave their current clan
+    default: true
+
+  clanspvp.join:
+    description: Allows a player to request joining a clan
+    default: true
+
+  # Admin Commands
+  clanspvp.reload:
+    description: Allows reloading the ClansPvP plugin using /clan reload
+    default: op
+
   clanspvp.admin:
-    description: Grants full access to ClansPvP admin commands
+    description: Grants access to all ClansPvP administrative features
     default: op
