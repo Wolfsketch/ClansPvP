@@ -1,0 +1,19 @@
+feat(clan): ally-workflow verbeterd & diverse bug-fixes
+
+### Added
+* Self-ally-check: spelers kunnen hun eigen clan niet langer ally’en.
+* Tab-completer toont nu dynamisch alle clan-namen naast ‘accept/deny’.
+* Nieuwe trust-melding-keys in **config.yml** (trust-enabled & trust-disabled).
+
+### Fixed
+* %clan%-placeholder werd niet vervangen bij bestaande ally-relatie.
+* Dubbele “ally request already sent” waarschuwing.
+* Trust-toggle gebruikt nu correcte message-keys.
+
+### Changed
+* Ally-subcommand herstructureerd in *ClanCommand*.
+* *ClanTabCompleter* vult 2e argument aan met live clan-namen.
+* *ClanManager*: interne ally-check gestroomlijnd.
+
+BREAKING CHANGE: Config heeft twee nieuwe message-keys.
+Serverbeheerders moeten **config.yml** bijwerken of regenereren.
