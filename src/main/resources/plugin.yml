@@ -17,74 +17,66 @@ commands:
     aliases: []
 
 permissions:
-  # General Permissions
+  # ── General ──────────────────────────────────────────
   clanspvp.create:
     description: Allows the creation of a clan
     default: true
-
   clanspvp.claim:
     description: Allows claiming chunks for your clan
     default: true
-
   clanspvp.unclaim:
     description: Allows unclaiming chunks for your clan
     default: true
-
   clanspvp.vault:
     description: Allows access to the clan vault
     default: true
-
   clanspvp.vault.bonus:
     description: Grants 10 extra vault slots for players with this permission
     default: false
-
   clanspvp.warp.set:
     description: Allows setting a warp point
     default: false
-
   clanspvp.warp.use:
     description: Allows using clan warps
     default: true
 
-  # Raid Permissions
+  # ── Raid ─────────────────────────────────────────────
   clanspvp.raid.start:
     description: Allows starting a raid (usually for leader or officer)
     default: false
-
   clanspvp.raid.stop:
     description: Allows stopping an active raid
     default: false
-
   clanspvp.raid.check:
     description: Allows checking the current raid location
     default: true
 
-  # Clan Management
+  # ── Clan Management ─────────────────────────────────
   clanspvp.invite:
     description: Allows inviting players to the clan
     default: true
-
   clanspvp.promote:
     description: Allows promoting other clan members
     default: false
-
   clanspvp.demote:
     description: Allows demoting other clan members
     default: false
-
   clanspvp.leave:
     description: Allows a player to leave their current clan
     default: true
-
   clanspvp.join:
     description: Allows a player to request joining a clan
     default: true
 
-  # Admin Commands
+  # ── Ally-Trust Toggle (new) ─────────────────────────
+  clanspvp.ally.trust:
+    description: Allows a leader to enable/disable build-break trust with an allied clan
+    default: op # change to 'true' if every leader should have it
+
+  # ── Administration ──────────────────────────────────
   clanspvp.reload:
     description: Allows reloading the ClansPvP plugin using /clan reload
     default: op
-
   clanspvp.admin:
     description: Grants access to all ClansPvP administrative features
     default: op

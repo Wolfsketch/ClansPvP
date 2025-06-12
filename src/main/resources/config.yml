@@ -66,6 +66,11 @@ clan-creation:
 settings:
   allow-friendly-fire-between-allies: false
 
+# ─── Ally-Trust Defaults ───────────────────────
+ally-trust:
+  default-enabled: false
+  require-mutual: true
+
 # ─── Clan Vault Settings ─────────────────────
 
 vault:
@@ -211,6 +216,9 @@ messages:
   raid-not-allowed: "&c✘ &7Only clan leaders or officers can %action% raids."
   raid-started: "&a✔ &7Raid started at your current location!"
   raid-stopped: "&c✘ &7Raid has been stopped by &f%player%&7."
+
+  trust-enabled: "&a✔ &7Build trust enabled with &e%clan%&7."
+  trust-disabled: "&e✓ &7Build trust disabled with &e%clan%&7."
 
   unknown-command: "&c✘ &7Unknown subcommand. Use &f/clan help"
 

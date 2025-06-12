@@ -1,34 +1,53 @@
 package me.jason.clanspvp.models;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 import me.jason.clanspvp.ClansPvP;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
 public class Clan {
 
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Core fields
+     * ──────────────────────────────────────────────────────────
+     */
     private final String name;
     private final String tag;
     private final UUID leader;
+
+    // members : UUID → role ( LEADER / OFFICER / MEMBER / RECRUIT )
     private final Map<UUID, String> members = new HashMap<>();
+
+    // allies : lowercase-clan-name → true (simple presence means allied)
     private final Set<String> allies = new HashSet<>();
 
-    // Raid
-    private double raidX = 0;
-    private double raidY = 0;
-    private double raidZ = 0;
-    private boolean raidActive = false;
+    // build-trust : lowercase-clan-name → true / false (defaults to false)
+    private final Map<String, Boolean> allyBuildTrust = new HashMap<>();
 
-    // Vault (niet persistente inventaris)
-    private transient Inventory vault;
-
-    // Friendly fire toggle
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Flags / volatile data
+     * ──────────────────────────────────────────────────────────
+     */
     private boolean allowFriendlyFire = false;
 
+    // Raid
+    private double raidX = 0, raidY = 0, raidZ = 0;
+    private boolean raidActive = false;
+
+    // Non-persistent vault inventory
+    private transient Inventory vault;
+
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Constructors
+     * ──────────────────────────────────────────────────────────
+     */
     public Clan(String name, String tag, UUID leader) {
         this.name = name;
         this.tag = tag;
@@ -36,8 +55,11 @@ public class Clan {
         members.put(leader, "LEADER");
     }
 
-    // ========== BASISGEGEVENS ==========
-
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Basic getters
+     * ──────────────────────────────────────────────────────────
+     */
     public String getName() {
         return name;
     }
@@ -50,8 +72,11 @@ public class Clan {
         return leader;
     }
 
-    // ========== LEDEN ==========
-
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Member handling
+     * ──────────────────────────────────────────────────────────
+     */
     public void addMember(UUID uuid, String role) {
         members.put(uuid, role);
     }
@@ -83,11 +108,16 @@ public class Clan {
         return new ArrayList<>(members.keySet());
     }
 
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Power helpers
+     * ──────────────────────────────────────────────────────────
+     */
     public double getPower() {
         return members.keySet().stream()
-                .map(uuid -> ClansPvP.getInstance().getPlayerData(uuid))
+                .map(id -> ClansPvP.getInstance().getPlayerData(id))
                 .filter(Objects::nonNull)
-                .mapToDouble(player -> player.getPower())
+                .mapToDouble(p -> p.getPower())
                 .sum();
     }
 
@@ -95,13 +125,16 @@ public class Clan {
         return members.size() * 5.0;
     }
 
-    // ========== RAID LOCATIE ==========
-
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Raid helpers
+     * ──────────────────────────────────────────────────────────
+     */
     public void setRaidLocation(double x, double y, double z) {
-        this.raidX = x;
-        this.raidY = y;
-        this.raidZ = z;
-        this.raidActive = true;
+        raidX = x;
+        raidY = y;
+        raidZ = z;
+        raidActive = true;
     }
 
     public double getRaidX() {
@@ -121,11 +154,14 @@ public class Clan {
     }
 
     public void stopRaid() {
-        this.raidActive = false;
+        raidActive = false;
     }
 
-    // ========== VAULT ==========
-
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Vault
+     * ──────────────────────────────────────────────────────────
+     */
     public Inventory getVault() {
         if (vault == null || vault.getSize() != getVaultSize()) {
             vault = Bukkit.createInventory(null, getVaultSize(), ChatColor.GOLD + "Clan Vault");
@@ -134,45 +170,63 @@ public class Clan {
     }
 
     public int getVaultSize() {
-        int baseSlots = 20;
-        int bonusSlots = 0;
-
-        for (UUID uuid : members.keySet()) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null && player.hasPermission("clanspvp.vault.bonus")) {
-                bonusSlots += 10;
-            }
+        int base = 20, bonus = 0;
+        for (UUID id : members.keySet()) {
+            Player p = Bukkit.getPlayer(id);
+            if (p != null && p.hasPermission("clanspvp.vault.bonus"))
+                bonus += 10;
         }
-
-        int totalSlots = baseSlots + bonusSlots;
-        return Math.min(54, ((int) Math.ceil(totalSlots / 9.0)) * 9);
+        int total = base + bonus;
+        return Math.min(54, ((int) Math.ceil(total / 9.0)) * 9);
     }
 
-    // ========== ALLIES ==========
-
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Allies
+     * ──────────────────────────────────────────────────────────
+     */
     public Set<String> getAllies() {
         return allies;
     }
 
-    public void addAlly(String clanName) {
-        allies.add(clanName.toLowerCase());
+    public void addAlly(String clan) {
+        String key = clan.toLowerCase();
+        allies.add(key);
+        allyBuildTrust.putIfAbsent(key, false); // default: not trusted to build
     }
 
-    public void removeAlly(String clanName) {
-        allies.remove(clanName.toLowerCase());
+    public void removeAlly(String clan) {
+        String key = clan.toLowerCase();
+        allies.remove(key);
+        allyBuildTrust.remove(key);
     }
 
-    public boolean isAlliedWith(String clanName) {
-        return allies.contains(clanName.toLowerCase());
+    public boolean isAlliedWith(String clan) {
+        return allies.contains(clan.toLowerCase());
     }
 
-    // ========== FRIENDLY FIRE ==========
+    /* ── Build-trust helpers ─────────────────────────────────── */
+    public void setAllyBuildTrust(String clan, boolean allow) {
+        String key = clan.toLowerCase();
+        if (isAlliedWith(key)) {
+            allyBuildTrust.put(key, allow);
+        }
+    }
 
+    public boolean isAllyAllowedToBuild(String clan) {
+        return allyBuildTrust.getOrDefault(clan.toLowerCase(), false);
+    }
+
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Friendly Fire toggle
+     * ──────────────────────────────────────────────────────────
+     */
     public boolean isAllowFriendlyFire() {
         return allowFriendlyFire;
     }
 
-    public void setAllowFriendlyFire(boolean allowFriendlyFire) {
-        this.allowFriendlyFire = allowFriendlyFire;
+    public void setAllowFriendlyFire(boolean b) {
+        allowFriendlyFire = b;
     }
 }

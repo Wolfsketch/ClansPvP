@@ -4,36 +4,48 @@ import me.jason.clanspvp.models.Clan;
 
 import java.util.*;
 
+/**
+ * Houdt het centrale clan-register én de pending ally-requests bij.
+ * Ally-relaties zitten nu volledig in het {@code Clan}-object zelf.
+ */
 public class ClanManager {
 
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Kern-tabellen
+     * ──────────────────────────────────────────────────────────
+     */
     private final Map<String, Clan> clans = new HashMap<>(); // name → Clan
-    private final Map<String, List<UUID>> clanMembers = new HashMap<>(); // name → members
-    private final Map<String, Set<String>> allies = new HashMap<>(); // name → set of ally names
-    private final Map<String, String> pendingAllyRequests = new HashMap<>(); // targetClan → requestingClan
+    private final Map<String, List<UUID>> clanMembers = new HashMap<>(); // name → leden
+    private final Map<String, String> pendingAllyRequests = new HashMap<>(); // target → requester
 
-    // ------------------------
-    // CLAN REGISTER/LOOKUP
-    // ------------------------
-
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Register / lookup
+     * ──────────────────────────────────────────────────────────
+     */
     public void registerClan(Clan clan) {
-        String name = clan.getName().toLowerCase();
-        clans.put(name, clan);
-        clanMembers.put(name, new ArrayList<>(List.of(clan.getLeader()))); // Add leader as first member
+        String key = clan.getName().toLowerCase();
+        clans.put(key, clan);
+        clanMembers.put(key, new ArrayList<>(List.of(clan.getLeader())));
     }
 
     public void unregisterClan(String name) {
-        final String lowerName = name.toLowerCase();
+        String key = name.toLowerCase();
 
-        clans.remove(lowerName);
-        clanMembers.remove(lowerName);
-        allies.remove(lowerName);
-        pendingAllyRequests.remove(lowerName);
+        /* verwijder uit centrale tabellen */
+        clans.remove(key);
+        clanMembers.remove(key);
+        pendingAllyRequests.remove(key);
 
-        for (Set<String> allySet : allies.values()) {
-            allySet.remove(name);
+        /* verwijder als ally uit alle overgebleven clans */
+        for (Clan c : clans.values()) {
+            c.removeAlly(name);
         }
 
-        pendingAllyRequests.entrySet().removeIf(entry -> entry.getValue().equalsIgnoreCase(name));
+        /* verwijder eventuele openstaande requests waar deze clan requester was */
+        pendingAllyRequests.entrySet()
+                .removeIf(e -> e.getValue().equalsIgnoreCase(name));
     }
 
     public Clan getClan(String name) {
@@ -48,24 +60,22 @@ public class ClanManager {
         return clans.values();
     }
 
-    // ------------------------
-    // CLAN MEMBERS
-    // ------------------------
-
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Leden-helpers
+     * ──────────────────────────────────────────────────────────
+     */
     public void addMember(Clan clan, UUID uuid) {
-        String name = clan.getName().toLowerCase();
-        List<UUID> members = clanMembers.computeIfAbsent(name, k -> new ArrayList<>());
-        if (!members.contains(uuid)) {
-            members.add(uuid);
-        }
+        clanMembers.computeIfAbsent(clan.getName().toLowerCase(), k -> new ArrayList<>())
+                .add(uuid);
     }
 
     public List<UUID> getMembers(Clan clan) {
-        return clanMembers.getOrDefault(clan.getName().toLowerCase(), new ArrayList<>());
+        return clanMembers.getOrDefault(clan.getName().toLowerCase(), Collections.emptyList());
     }
 
     public Clan getClanByMember(UUID uuid) {
-        for (Map.Entry<String, List<UUID>> entry : clanMembers.entrySet()) {
+        for (var entry : clanMembers.entrySet()) {
             if (entry.getValue().contains(uuid)) {
                 return clans.get(entry.getKey());
             }
@@ -73,14 +83,11 @@ public class ClanManager {
         return null;
     }
 
-    public Clan getClanByPlayer(UUID uuid) {
-        return getClanByMember(uuid);
-    }
-
-    // ------------------------
-    // ALLY MANAGEMENT
-    // ------------------------
-
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Pending ally-requests
+     * ──────────────────────────────────────────────────────────
+     */
     public void sendAllyRequest(String fromClan, String toClan) {
         pendingAllyRequests.put(toClan.toLowerCase(), fromClan.toLowerCase());
     }
@@ -97,26 +104,36 @@ public class ClanManager {
         pendingAllyRequests.remove(targetClan.toLowerCase());
     }
 
+    /*
+     * ────────────────────────────────────────────────────────────
+     * Ally-management (gebaseerd op Clan#getAllies)
+     * ──────────────────────────────────────────────────────────
+     */
     public void addAlly(String clanA, String clanB) {
         Clan a = clans.get(clanA.toLowerCase());
         Clan b = clans.get(clanB.toLowerCase());
         if (a != null && b != null) {
-            a.addAlly(clanB); // voeg toe aan A
-            b.addAlly(clanA); // voeg ook toe aan B
+            a.addAlly(clanB);
+            b.addAlly(clanA);
         }
     }
 
     public boolean areAllies(String clanA, String clanB) {
-        return allies.getOrDefault(clanA.toLowerCase(), Collections.emptySet()).contains(clanB.toLowerCase());
+        Clan a = clans.get(clanA.toLowerCase());
+        return a != null && a.isAlliedWith(clanB);
     }
 
     public Set<String> getAllies(String clanName) {
-        return allies.getOrDefault(clanName.toLowerCase(), Collections.emptySet());
+        Clan c = clans.get(clanName.toLowerCase());
+        return (c != null) ? c.getAllies() : Collections.emptySet();
     }
 
     public void removeAlly(String clanA, String clanB) {
-        allies.getOrDefault(clanA.toLowerCase(), Collections.emptySet()).remove(clanB.toLowerCase());
-        allies.getOrDefault(clanB.toLowerCase(), Collections.emptySet()).remove(clanA.toLowerCase());
+        Clan a = clans.get(clanA.toLowerCase());
+        Clan b = clans.get(clanB.toLowerCase());
+        if (a != null)
+            a.removeAlly(clanB);
+        if (b != null)
+            b.removeAlly(clanA);
     }
-
 }

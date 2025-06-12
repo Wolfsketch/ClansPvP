@@ -1,33 +1,36 @@
 package me.jason.clanspvp;
 
 import com.google.gson.*;
-import java.io.*;
-import java.util.*;
-
 import me.jason.clanspvp.commands.ClanCommand;
 import me.jason.clanspvp.commands.ClanMapCommand;
 import me.jason.clanspvp.commands.ClanTabCompleter;
-import me.jason.clanspvp.listeners.ClaimVisualFeedbackListener;
-import me.jason.clanspvp.listeners.CombatListener;
-import me.jason.clanspvp.listeners.PlayerDeathListener;
-import me.jason.clanspvp.listeners.PlayerKillListener;
-import me.jason.clanspvp.listeners.PlayerJoinListener;
+import me.jason.clanspvp.listeners.*;
 import me.jason.clanspvp.managers.ClanManager;
-import me.jason.clanspvp.managers.ConfigManager;
 import me.jason.clanspvp.managers.ClaimManager;
+import me.jason.clanspvp.managers.ConfigManager;
 import me.jason.clanspvp.models.Clan;
 import me.jason.clanspvp.models.PlayerData;
 import me.jason.clanspvp.utils.ClanScoreboard;
 import net.milkbowl.vault.permission.Permission;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.*;
+import java.util.*;
+
+/**
+ * Main plugin bootstrap.
+ */
 public class ClansPvP extends JavaPlugin {
 
+    /*
+     * -------------------------------------------------------------
+     * Singleton & managers
+     * -----------------------------------------------------------
+     */
     private static ClansPvP instance;
 
     private final Map<UUID, PlayerData> playerDataMap = new HashMap<>();
@@ -41,10 +44,14 @@ public class ClansPvP extends JavaPlugin {
         return instance;
     }
 
+    /*
+     * -------------------------------------------------------------
+     * Plugin lifecycle
+     * -----------------------------------------------------------
+     */
     @Override
     public void onEnable() {
         instance = this;
-
         saveDefaultConfig();
 
         clanManager = new ClanManager();
@@ -52,15 +59,19 @@ public class ClansPvP extends JavaPlugin {
 
         setupPermissions();
 
+        /* Command / tab-complete */
         getCommand("clan").setExecutor(new ClanCommand(this));
         getCommand("clan").setTabCompleter(new ClanTabCompleter());
         getCommand("clanmap").setExecutor(new ClanMapCommand(this));
 
+        /* Event listeners */
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerKillListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
         getServer().getPluginManager().registerEvents(new ClaimVisualFeedbackListener(this), this);
         getServer().getPluginManager().registerEvents(new CombatListener(this), this);
+        getServer().getPluginManager().registerEvents(new TNTExplosionListener(), this);
+        getServer().getPluginManager().registerEvents(new BlockBreakListener(), this);
 
         getLogger().info("ClansPvP enabled.");
 
@@ -71,12 +82,17 @@ public class ClansPvP extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        getLogger().info("ClansPvP disabled.");
         saveClans();
         savePlayerData();
         saveClaims();
+        getLogger().info("ClansPvP disabled.");
     }
 
+    /*
+     * -------------------------------------------------------------
+     * Clan persistence (allies + trusted build flags)
+     * -----------------------------------------------------------
+     */
     private void loadClans() {
         File file = new File(getDataFolder(), "clans.json");
         if (!file.exists())
@@ -92,26 +108,32 @@ public class ClansPvP extends JavaPlugin {
                 String tag = c.get("tag").getAsString();
                 Clan clan = new Clan(name, tag, leader);
 
+                /* members */
                 JsonObject members = c.getAsJsonObject("members");
                 for (String uuidStr : members.keySet()) {
                     String role = members.getAsJsonObject(uuidStr).get("role").getAsString();
                     clan.addMember(UUID.fromString(uuidStr), role);
                 }
 
-                JsonArray alliesArray = c.getAsJsonArray("allies");
-                if (alliesArray != null) {
-                    for (JsonElement element : alliesArray) {
-                        clan.addAlly(element.getAsString());
-                    }
+                /* allies */
+                if (c.has("allies")) {
+                    c.getAsJsonArray("allies").forEach(el -> clan.addAlly(el.getAsString()));
                 }
 
-                if (c.has("friendlyFire")) {
-                    clan.setAllowFriendlyFire(c.get("friendlyFire").getAsBoolean());
+                /* trusted allies for build/break */
+                if (c.has("trustedAllies")) {
+                    c.getAsJsonArray("trustedAllies")
+                            .forEach(el -> clan.setAllyBuildTrust(el.getAsString(), true));
                 }
+
+                /* friendly-fire toggle */
+                if (c.has("friendlyFire"))
+                    clan.setAllowFriendlyFire(c.get("friendlyFire").getAsBoolean());
 
                 clanManager.registerClan(clan);
             }
         } catch (IOException e) {
+            getLogger().severe("Could not load clans.json");
             e.printStackTrace();
         }
     }
@@ -125,6 +147,7 @@ public class ClansPvP extends JavaPlugin {
             c.addProperty("tag", clan.getTag());
             c.addProperty("leader", clan.getLeader().toString());
 
+            /* members */
             JsonObject members = new JsonObject();
             for (UUID uuid : clan.getMembers().keySet()) {
                 JsonObject m = new JsonObject();
@@ -133,26 +156,38 @@ public class ClansPvP extends JavaPlugin {
             }
             c.add("members", members);
 
-            JsonArray allies = new JsonArray();
-            for (String ally : clan.getAllies()) {
-                allies.add(ally);
-            }
-            c.add("allies", allies);
+            /* allies */
+            JsonArray alliesArr = new JsonArray();
+            clan.getAllies().forEach(alliesArr::add);
+            c.add("allies", alliesArr);
 
+            /* trusted allies */
+            JsonArray trustedArr = new JsonArray();
+            clan.getAllies().stream()
+                    .filter(clan::isAllyAllowedToBuild)
+                    .forEach(trustedArr::add);
+            c.add("trustedAllies", trustedArr);
+
+            /* friendly fire */
             c.addProperty("friendlyFire", clan.isAllowFriendlyFire());
 
             clansJson.add(clan.getName(), c);
         }
-
         root.add("clans", clansJson);
 
         try (Writer writer = new FileWriter(new File(getDataFolder(), "clans.json"))) {
             gson.toJson(root, writer);
         } catch (IOException e) {
+            getLogger().severe("Could not save clans.json");
             e.printStackTrace();
         }
     }
 
+    /*
+     * -------------------------------------------------------------
+     * Player-data persistence
+     * -----------------------------------------------------------
+     */
     private void loadPlayerData() {
         File file = new File(getDataFolder(), "playerdata.json");
         if (!file.exists())
@@ -170,6 +205,7 @@ public class ClansPvP extends JavaPlugin {
                 pd.setDeaths(data.get("deaths").getAsDouble());
                 pd.setPower(data.get("power").getAsDouble());
 
+                /* restore clan ref */
                 if (data.has("clan") && !data.get("clan").isJsonNull()) {
                     String clanName = data.get("clan").getAsString();
                     String role = data.get("clanRole").getAsString();
@@ -179,10 +215,10 @@ public class ClansPvP extends JavaPlugin {
                         pd.setClanRole(role);
                     }
                 }
-
                 playerDataMap.put(uuid, pd);
             }
         } catch (IOException e) {
+            getLogger().severe("Could not load playerdata.json");
             e.printStackTrace();
         }
     }
@@ -193,39 +229,29 @@ public class ClansPvP extends JavaPlugin {
 
         for (UUID uuid : playerDataMap.keySet()) {
             PlayerData pd = playerDataMap.get(uuid);
-            JsonObject obj = new JsonObject();
-            obj.addProperty("kills", pd.getKills());
-            obj.addProperty("deaths", pd.getDeaths());
-            obj.addProperty("power", pd.getPower());
-            obj.addProperty("clan", pd.getClan() != null ? pd.getClan().getName() : null);
-            obj.addProperty("clanRole", pd.getClanRole());
-            players.add(uuid.toString(), obj);
+            JsonObject o = new JsonObject();
+            o.addProperty("kills", pd.getKills());
+            o.addProperty("deaths", pd.getDeaths());
+            o.addProperty("power", pd.getPower());
+            o.addProperty("clan", pd.getClan() != null ? pd.getClan().getName() : null);
+            o.addProperty("clanRole", pd.getClanRole());
+            players.add(uuid.toString(), o);
         }
-
         root.add("players", players);
 
         try (Writer writer = new FileWriter(new File(getDataFolder(), "playerdata.json"))) {
             gson.toJson(root, writer);
         } catch (IOException e) {
+            getLogger().severe("Could not save playerdata.json");
             e.printStackTrace();
         }
     }
 
-    private void saveClaims() {
-        JsonObject root = new JsonObject();
-
-        for (Chunk chunk : claimManager.getAllClaims().keySet()) {
-            String key = claimManager.getClaimKey(chunk);
-            root.addProperty(key, claimManager.getClaimOwner(chunk));
-        }
-
-        try (Writer writer = new FileWriter(new File(getDataFolder(), "claims.json"))) {
-            gson.toJson(root, writer);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
+    /*
+     * -------------------------------------------------------------
+     * Claim persistence
+     * -----------------------------------------------------------
+     */
     private void loadClaims() {
         File file = new File(getDataFolder(), "claims.json");
         if (!file.exists())
@@ -248,12 +274,31 @@ public class ClansPvP extends JavaPlugin {
                 claimManager.forceClaimChunk(clan, chunk);
             }
         } catch (IOException e) {
+            getLogger().severe("Could not load claims.json");
             e.printStackTrace();
         }
     }
 
-    public PlayerData getPlayerData(UUID uuid) {
-        return playerDataMap.computeIfAbsent(uuid, PlayerData::new);
+    private void saveClaims() {
+        JsonObject root = new JsonObject();
+        for (Chunk c : claimManager.getAllClaims().keySet()) {
+            root.addProperty(claimManager.getClaimKey(c), claimManager.getClaimOwner(c));
+        }
+        try (Writer writer = new FileWriter(new File(getDataFolder(), "claims.json"))) {
+            gson.toJson(root, writer);
+        } catch (IOException e) {
+            getLogger().severe("Could not save claims.json");
+            e.printStackTrace();
+        }
+    }
+
+    /*
+     * -------------------------------------------------------------
+     * Convenience getters
+     * -----------------------------------------------------------
+     */
+    public PlayerData getPlayerData(UUID id) {
+        return playerDataMap.computeIfAbsent(id, PlayerData::new);
     }
 
     public ClanManager getClanManager() {
@@ -264,41 +309,49 @@ public class ClansPvP extends JavaPlugin {
         return claimManager;
     }
 
-    public String getPermissionGroup(UUID uuid) {
-        Player player = Bukkit.getPlayer(uuid);
-        if (player != null && permissions != null) {
-            String[] groups = permissions.getPlayerGroups(player);
-            return (groups.length > 0) ? groups[0] : "default";
+    public String getPermissionGroup(UUID id) {
+        Player p = Bukkit.getPlayer(id);
+        if (p != null && permissions != null) {
+            String[] groups = permissions.getPlayerGroups(p);
+            return groups.length > 0 ? groups[0] : "default";
         }
         return "default";
     }
 
+    /*
+     * -------------------------------------------------------------
+     * Vault permissions setup
+     * -----------------------------------------------------------
+     */
     private void setupPermissions() {
-        if (getServer().getPluginManager().getPlugin("Vault") != null) {
-            RegisteredServiceProvider<Permission> rsp = getServer().getServicesManager()
-                    .getRegistration(Permission.class);
-            if (rsp != null) {
-                permissions = rsp.getProvider();
-                getLogger().info("Vault permissions successfully linked.");
-            } else {
-                getLogger().warning("Vault permissions provider not found.");
-            }
-        } else {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
             getLogger().warning("Vault plugin not found!");
+            return;
+        }
+        RegisteredServiceProvider<Permission> rsp = getServer().getServicesManager().getRegistration(Permission.class);
+        if (rsp != null) {
+            permissions = rsp.getProvider();
+            getLogger().info("Vault permissions successfully linked.");
+        } else {
+            getLogger().warning("Vault permissions provider not found.");
         }
     }
 
+    /*
+     * -------------------------------------------------------------
+     * /clan reload helper
+     * -----------------------------------------------------------
+     */
     public void reload() {
         reloadConfig();
         ConfigManager.reload();
 
         Bukkit.getOnlinePlayers().forEach(p -> {
             PlayerData data = getPlayerData(p.getUniqueId());
-            if (data.getClan() != null) {
+            if (data.getClan() != null)
                 ClanScoreboard.showClanScoreboard(p, data.getClan(), data);
-            } else {
+            else
                 ClanScoreboard.showNoClanScoreboard(p);
-            }
         });
     }
 }

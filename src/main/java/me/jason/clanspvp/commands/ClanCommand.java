@@ -52,7 +52,7 @@ public class ClanCommand implements CommandExecutor {
             player.sendMessage(ChatUtil.color("&e→ &7/clan info &8– &fView your clan information"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan vault &8– &fOpen the clan vault"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan invite | accept | deny <player> &8– &fManage invites"));
-            player.sendMessage(ChatUtil.color("&e→ &7/clan join|cancel <clan> &8– &fJoin or cancel request"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan join | cancel <clan> &8– &fJoin or cancel request"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan leave &8– &fLeave your clan"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan disband | confirm &8– &fDisband your clan"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan promote | demote <player> &8– &fRank members"));
@@ -427,113 +427,142 @@ public class ClanCommand implements CommandExecutor {
             return true;
         }
 
+        /* ───────────────────────── ALLY SUB-COMMAND ───────────────────────── */
         if (args[0].equalsIgnoreCase("ally")) {
+
+            /* ── 0. Basis-validaties ─────────────────────────────────────── */
             if (args.length < 2) {
-                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("usage-clan-ally")));
+                player.sendMessage(ChatUtil.color(
+                        ConfigManager.getMessage("usage-clan-ally")));
                 return true;
             }
 
             Clan myClan = data.getClan();
             if (myClan == null) {
-                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
+                player.sendMessage(ChatUtil.color(
+                        ConfigManager.getMessage("not-in-clan")));
                 return true;
             }
-
             if (!"LEADER".equals(data.getClanRole())) {
-                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("only-leader-can-ally")));
+                player.sendMessage(ChatUtil.color(
+                        ConfigManager.getMessage("only-leader-can-ally")));
                 return true;
             }
 
-            String subArg = args[1];
+            /* ── 1. Verhinder ‘self-ally’ ────────────────────────────────── */
+            String firstArg = args[1];
+            if (firstArg.equalsIgnoreCase(myClan.getName()) ||
+                    firstArg.equalsIgnoreCase(myClan.getTag())) {
+                player.sendMessage(ChatUtil.color(
+                        "&c✘ You cannot ally with your own clan."));
+                return true;
+            }
 
-            if (subArg.equalsIgnoreCase("accept")) {
-                String requester = clanManager.getRequestingClan(myClan.getName());
-                if (requester == null) {
-                    player.sendMessage(ChatUtil.color(ConfigManager.getMessage("no-pending-ally-request")));
+            /* ── 2. /clan ally <clan> trust <on|off> ────────────────────── */
+            if (args.length == 4 && args[2].equalsIgnoreCase("trust")) {
+                String allyName = args[1];
+                String toggle = args[3].toLowerCase();
+
+                if (!clanManager.clanExists(allyName)) {
+                    player.sendMessage(ChatUtil.color(
+                            ConfigManager.getMessage("clan-not-exist")));
+                    return true;
+                }
+                if (!clanManager.areAllies(myClan.getName(), allyName)) {
+                    player.sendMessage(ChatUtil.color(
+                            "&c✘ Your clan is not allied with that clan."));
+                    return true;
+                }
+                if (!toggle.equals("on") && !toggle.equals("off")) {
+                    player.sendMessage(ChatUtil.color(
+                            "&c✘ Usage: /clan ally <clan> trust <on|off>"));
                     return true;
                 }
 
-                clanManager.addAlly(myClan.getName(), requester);
+                boolean trust = toggle.equals("on");
+                myClan.setAllyBuildTrust(allyName, trust);
                 plugin.saveClans();
-                clanManager.removeAllyRequest(myClan.getName());
 
-                player.sendMessage(
-                        ChatUtil.color(ConfigManager.getMessage("ally-accepted").replace("%clan%", requester)));
-                Clan other = clanManager.getClan(requester);
-                if (other != null) {
-                    Player leader = Bukkit.getPlayer(other.getLeader());
-                    if (leader != null)
-                        leader.sendMessage(ChatUtil.color(
-                                ConfigManager.getMessage("ally-request-accepted").replace("%clan%", myClan.getName())));
-                }
+                player.sendMessage(ChatUtil.color(
+                        trust
+                                ? ConfigManager.getMessage("trust-enabled")
+                                        .replace("%clan%", allyName)
+                                : ConfigManager.getMessage("trust-disabled")
+                                        .replace("%clan%", allyName)));
                 return true;
             }
 
-            if (subArg.equalsIgnoreCase("deny")) {
+            /* ── 3. /clan ally accept | deny ────────────────────────────── */
+            String sub = args[1].toLowerCase();
+            if (sub.equals("accept") || sub.equals("deny")) {
                 String requester = clanManager.getRequestingClan(myClan.getName());
                 if (requester == null) {
-                    player.sendMessage(ChatUtil.color(ConfigManager.getMessage("no-pending-ally-request")));
+                    player.sendMessage(ChatUtil.color(
+                            ConfigManager.getMessage("no-pending-ally-request")));
                     return true;
                 }
 
-                clanManager.removeAllyRequest(myClan.getName());
-                player.sendMessage(
-                        ChatUtil.color(ConfigManager.getMessage("ally-denied").replace("%clan%", requester)));
+                if (sub.equals("accept")) {
+                    clanManager.addAlly(myClan.getName(), requester);
+                    plugin.saveClans();
+                    clanManager.removeAllyRequest(myClan.getName());
+
+                    player.sendMessage(ChatUtil.color(
+                            ConfigManager.getMessage("ally-accepted")
+                                    .replace("%clan%", requester)));
+
+                    Clan other = clanManager.getClan(requester);
+                    if (other != null) {
+                        Player leader = Bukkit.getPlayer(other.getLeader());
+                        if (leader != null) {
+                            leader.sendMessage(ChatUtil.color(
+                                    ConfigManager.getMessage("ally-request-accepted")
+                                            .replace("%clan%", myClan.getName())));
+                        }
+                    }
+                } else { // deny
+                    clanManager.removeAllyRequest(myClan.getName());
+                    player.sendMessage(ChatUtil.color(
+                            ConfigManager.getMessage("ally-denied")
+                                    .replace("%clan%", requester)));
+                }
                 return true;
             }
 
-            // default: /clan ally <name>
-            String targetClan = subArg;
+            /* ── 4. /clan ally <targetClan> (verzoek versturen) ─────────── */
+            String targetClan = args[1];
+
             if (!clanManager.clanExists(targetClan)) {
-                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-not-exist")));
+                player.sendMessage(ChatUtil.color(
+                        ConfigManager.getMessage("clan-not-exist")));
                 return true;
             }
-
             if (clanManager.areAllies(myClan.getName(), targetClan)) {
-                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("already-allies")));
+                player.sendMessage(ChatUtil.color(
+                        ConfigManager.getMessage("already-allies")
+                                .replace("%clan%", targetClan)));
                 return true;
             }
-
             if (clanManager.hasPendingRequest(targetClan)) {
-                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("ally-request-already-sent")));
+                player.sendMessage(ChatUtil.color(
+                        ConfigManager.getMessage("ally-request-already-sent")
+                                .replace("%clan%", targetClan)));
                 return true;
             }
 
             clanManager.sendAllyRequest(myClan.getName(), targetClan);
-            Clan target = clanManager.getClan(targetClan);
-            Player targetLeader = Bukkit.getPlayer(target.getLeader());
-            if (targetLeader != null) {
-                targetLeader.sendMessage(ChatUtil
-                        .color(ConfigManager.getMessage("ally-request-received").replace("%clan%", myClan.getName())));
+
+            Clan tgt = clanManager.getClan(targetClan);
+            Player tgtLeader = Bukkit.getPlayer(tgt.getLeader());
+            if (tgtLeader != null) {
+                tgtLeader.sendMessage(ChatUtil.color(
+                        ConfigManager.getMessage("ally-request-received")
+                                .replace("%clan%", myClan.getName())));
             }
 
-            player.sendMessage(
-                    ChatUtil.color(ConfigManager.getMessage("ally-request-sent").replace("%clan%", targetClan)));
-            return true;
-        }
-
-        if (args[0].equalsIgnoreCase("confirm")) {
-            if (!disbandConfirmations.containsKey(player.getUniqueId())) {
-                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("no-pending-request")));
-                return true;
-            }
-
-            disbandConfirmations.remove(player.getUniqueId());
-            Clan clan = data.getClan();
-
-            for (UUID member : clan.getAllMembers()) {
-                PlayerData memberData = plugin.getPlayerData(member);
-                memberData.setClan(null);
-                memberData.setClanRole(null);
-                Player online = Bukkit.getPlayer(member);
-                if (online != null) {
-                    ClanScoreboard.showNoClanScoreboard(online);
-                    online.sendMessage(ChatUtil.color("&c✗ Your clan has been disbanded."));
-                }
-            }
-
-            plugin.getClanManager().unregisterClan(clan.getName());
-            player.sendMessage(ChatUtil.color(ConfigManager.getMessage("clan-disband-success")));
+            player.sendMessage(ChatUtil.color(
+                    ConfigManager.getMessage("ally-request-sent")
+                            .replace("%clan%", targetClan)));
             return true;
         }
 
