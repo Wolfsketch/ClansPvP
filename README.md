@@ -1,78 +1,112 @@
-# ⚔️ ClansPvP
+# ⚔️ ClansPvP — Modern Clan Plugin
 
-**ClansPvP** is a powerful Minecraft plugin for PvP servers that delivers a full-featured clan system, land claiming, raid mechanics, shared vaults, ASCII map, live scoreboard, K/D requirements, **alliances**, and a clan-level friendly-fire toggle – all wrapped in a modern, clean UI.
+**ClansPvP** is an all-in-one clan system for Paper/Spigot servers.  
+From land claims and power to raids, vaults, warps, alliances, and even in-game GitHub issue reporting — everything is wrapped in a clean, modern UI.
 
 ---
 
-## 🚀 Features
+## 🚀 Feature Overview
 
 | Category | Highlights |
 |----------|------------|
-| **Core Clan System** | Create clans, manage roles (Leader, Officer, Member, Recruit), invite / accept / deny, promote, demote, disband with confirmation |
-| **Alliances** | Send requests with `/clan ally <clan>`, accept/deny, allies show on scoreboard, map, info |
-| **Friendly Fire Toggle** | Leaders toggle PvP inside the clan with `/clan friendlyfire on|off` |
-| **Land Claiming** | Chunk-based (16 × 16) claims, per-member limits, `/clan claim` & `/clan unclaim` |
-| **Raid System** | `/clan raid start|stop|check` for controlled raids (leader/officer) |
-| **Shared Vault** | `/clan vault` with donor-based slot boosts |
-| **Live Scoreboard** | Sidebar shows power, members, claims, allies, etc. |
-| **ASCII Map** | `/clanmap` visualizes: `█` own, `█` allies, `█` enemies, `░` free; `+` is you |
-| **K/D Requirement** | Optional minimum K/D to create a clan |
-| **Donor Perks** | Extra power or vault slots via Vault permission groups |
-| **Modern UI** | Styled messages, Unicode separators, color coding |
+| **Core Clans** | Create / disband, roles (Leader, Officer, Member, Recruit), invites & join requests, promote/demote |
+| **Alliances** | `/clan ally <clan>` ↔ accept/deny; optional build-trust toggle |
+| **Land Claiming** | Chunk-based claims with per-member limits, overclaiming, ASCII map viewer |
+| **Raids** | Controlled raids with `/clan raid start/stop/check` |
+| **Shared Vault** | GUI vault, donor slot bonuses via permissions |
+| **Warps** | `/clan setwarp` or `/clan warp <name>` — per-player cooldown in config |
+| **Ally-Warps (NEW)** | Share warps with allies → `/clan ally setwarp` or `/clan warp <name>` with separate limit/cooldown |
+| **GitHub Issue Reporter** | `/clan issue <player> <title> <info>` opens an issue on your repo (token opt-in) |
+| **Live Scoreboard** | Sidebar shows power, members, claims, allies, warp hint, etc. |
+| **Friendly-Fire Toggle** | Leaders set `/clan friendlyfire on` or `off` |
+| **K/D Requirement** | Optional minimum K/D to found a clan |
+| **Donor Perks** | Extra power or vault slots via Vault groups |
+| **Modern Chat UI** | Color-coded messages, Unicode symbols, configurable strings |
 
 ---
 
 ## 💬 Command Cheat-Sheet
 
-```
-/clan create <name> [tag]           – Create a clan
-/clan info                           – Show clan details (+ scoreboard)
-/clan vault                          – Open shared vault
-/clan invite <player>               – Invite player
-/clan join <clan> / cancel          – Request / cancel join
-/clan accept|deny <player>          – Handle join requests
-/clan leave                          – Leave clan
-/clan promote|demote <player>       – Rank management
-/clan disband / confirm             – Disband clan
-/clan claim | unclaim               – Manage land
-/clan raid start|stop|check         – Raid controls
-/clan ally <clan|accept|deny>       – Alliance controls
-/clan friendlyfire on|off           – Toggle intra-clan PvP
-/clanmap                            – View ASCII land map
-/clan reload                        – Reload plugin (admin)
+```text
+/clan create <name> [tag]        – Create a clan
+/clan info                       – Show clan details (+ scoreboard)
+/clan vault                      – Open shared vault
+/clan invite <player>            – Invite player
+/clan join <clan> / cancel       – Request / cancel join
+/clan accept|deny <player>       – Handle join requests
+/clan leave                      – Leave clan
+/clan promote|demote <player>    – Rank management
+/clan disband / confirm          – Disband clan
+
+/clan claim|unclaim            – Claim / unclaim chunk
+/clan raid start|stop |check      – Raid controls
+
+/clan setwarp <name>             – Set clan warp
+/clan warp <name>                – Teleport to clan warp
+
+/clan ally setwarp <name>        – Set ally-warp (shared)
+/clan ally warp <name>           – Teleport to ally-warp
+
+/clan ally <clan|accept|deny>    – Alliance controls
+/clan ally <clan> trust on|off   – Allow allies to build/break
+
+/clan friendlyfire on|off        – Toggle intra-clan PvP
+/clan issue <player> <title> <info>
+                                 – Create GitHub issue (opt-in)
+
+/clanmap                         – ASCII land map
+/clan reload                     – Reload plugin (admin)
 ```
 
 ---
 
 ## 🔧 Installation
 
-1. Build or download `ClansPvP.jar`.
-2. Drop it into `/plugins` on your Spigot/Paper server.
-3. Restart the server – config files generate automatically.
+1. Build or download **`ClansPvP.jar`**.  
+2. Drop it into your server’s `/plugins` folder.  
+3. Restart or `/reload` the server – default configs will generate.  
+
+> **Optional:** add a fine-grained GitHub PAT (Issues: RW) and repo in `config.yml`
+> to enable in-game bug reporting.
 
 ---
 
-## ⚙️ Config Highlights (`config.yml`)
+## ⚙️ Config Highlights
 
-* Power & regen settings  
-* Claim limits per member  
-* Donor-group bonuses (power / vault)  
-* Friendly-fire defaults (clan & allies)  
-* K/D requirement for creation  
-* Raid role list & messages  
-* Fully customizable messages / colors / symbols
+* `claiming.*` – chunk size, overclaiming, per-member limit  
+* `warp.*` & `warp-ally.*` – max warps per clan, cooldowns  
+* `github.*` – repo, token, labels, cooldown (opt-in)  
+* `donor-bonus-*` – extra power / vault slots via permission groups  
+* All messages, colors & symbols under `messages:` and `ui:`  
+
+---
+
+## 📜 Permissions
+
+| Node | Default | Purpose |
+|------|---------|---------|
+| `clanspvp.create` | ✅ | Create clan |
+| `clanspvp.warp.set / use` | ❌ / ✅ | Clan warps |
+| `clanspvp.warp.ally.set / use` | ❌ / ✅ | Ally warps |
+| `clanspvp.issue` | ✅ | Use `/clan issue` |
+| `clanspvp.raid.start|stop` | ❌ | Start/stop raids |
+| `clanspvp.reload` | OP | `/clan reload` |
+
+*(Full list in `plugin.yml`)*  
+
+Requires **Vault** as permission bridge. Works out-of-the-box with **LuckPerms**.
 
 ---
 
 ## 📦 Requirements
 
-* **Java 17+**  
-* **Vault** plugin for permissions  
-* Spigot / Paper 1.20-1.21+
+* Java 17+  
+* Spigot / Paper 1.20 – 1.21  
+* Vault (permissions)  
 
 ---
 
-## 🗺️ `/clanmap` Example
+## 🗺️ Example `/clanmap`
 
 ```
             Clan Land Map (You are +)
@@ -88,15 +122,15 @@ Legend: + You  █ [TAG] Yours  █ Allies  █ Enemy  ░ Free
 
 ---
 
-## 👨‍💻 Author
+## 👤 Author
 
-**Wolfsketch** – passionate Minecraft plugin developer  
-Feel free to reach out on GitHub or Discord.
+**Wolfsketch** – Minecraft plugin developer  
+Questions or suggestions? Open an issue (or use `/clan issue` in-game 😉).
 
 ---
 
-## 📜 License
+## 📄 License
 
-This plugin is **not open source**. Using, modifying, or redistributing it without permission is prohibited.
-
-> ⭐ Enjoy ClansPvP? Star the repo to support future updates!
+ClansPvP is **closed-source**.  
+Redistribution, modification, or resale is prohibited without permission.  
+Enjoy the plugin? ⭐ Star the repo and spread the word!
