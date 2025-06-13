@@ -27,15 +27,15 @@
       <id>papermc-repo</id>
       <url>https://repo.papermc.io/repository/maven-public/</url>
     </repository>
-      <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-      </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
   </repositories>
 
   <!-- Dependencies -->
   <dependencies>
-    <!-- Spigot API -->
+    <!-- Spigot / Paper API -->
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
@@ -43,28 +43,41 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Kyori Adventure API -->
+    <!-- Kyori Adventure -->
     <dependency>
-        <groupId>net.kyori</groupId>
-        <artifactId>adventure-api</artifactId>
-        <version>4.14.0</version>
+      <groupId>net.kyori</groupId>
+      <artifactId>adventure-api</artifactId>
+      <version>4.14.0</version>
     </dependency>
-
-    <!-- Kyori Adventure Platform voor Bukkit (nodig voor component support met Spigot/Paper) -->
     <dependency>
-        <groupId>net.kyori</groupId>
-        <artifactId>adventure-platform-bukkit</artifactId>
-        <version>4.3.2</version>
+      <groupId>net.kyori</groupId>
+      <artifactId>adventure-platform-bukkit</artifactId>
+      <version>4.3.2</version>
     </dependency>
 
     <!-- Vault API -->
     <dependency>
-        <groupId>com.github.MilkBowl</groupId>
-        <artifactId>VaultAPI</artifactId>
-        <version>1.7</version>
-        <scope>provided</scope>
+      <groupId>com.github.MilkBowl</groupId>
+      <artifactId>VaultAPI</artifactId>
+      <version>1.7</version>
+      <scope>provided</scope>
     </dependency>
-   
+
+    <!-- GitHub REST-wrapper (voor /clan issue) -->
+    <dependency>
+      <groupId>org.kohsuke</groupId>
+      <artifactId>github-api</artifactId>
+      <version>1.314</version>
+    </dependency>
+
+    <!-- Optioneel: SnakeYAML (alleen nodig als je buiten Bukkit om YAML leest) -->
+    <!--
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>2.2</version>
+    </dependency>
+    -->
   </dependencies>
 
   <!-- Build plugins -->
@@ -81,7 +94,7 @@
         </configuration>
       </plugin>
 
-      <!-- Shade plugin (optional, for fat-jar builds) -->
+      <!-- Shade plugin: maakt één fat-jar -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -93,6 +106,15 @@
             <configuration>
               <minimizeJar>false</minimizeJar>
               <shadedArtifactAttached>false</shadedArtifactAttached>
+              <!-- optioneel relocation van GitHub-classes om conflicts te vermijden -->
+              <!--
+              <relocations>
+                <relocation>
+                  <pattern>org.kohsuke.github</pattern>
+                  <shadedPattern>me.jason.libs.github</shadedPattern>
+                </relocation>
+              </relocations>
+              -->
             </configuration>
           </execution>
         </executions>

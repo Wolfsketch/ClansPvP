@@ -15,7 +15,11 @@ import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.Location;
+import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.GHRepository;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -62,6 +66,7 @@ public class ClanCommand implements CommandExecutor {
             player.sendMessage(ChatUtil.color("&e→ &7/clan friendlyfire <on|off> &8– &fToggle PvP in clan"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan ally <name | accept | deny> &8– &fManage allies"));
             player.sendMessage(ChatUtil.color("&e→ &7/clan reload &8– &fReload config (admin only)"));
+            player.sendMessage(ChatUtil.color("&e→ &7/clan issue <player> <title> <info> &8– &fReport bug/suggestion"));
             player.sendMessage(" ");
             return true;
         }
@@ -424,6 +429,134 @@ public class ClanCommand implements CommandExecutor {
                 }
             }.runTaskLater(plugin, 20 * 30);
 
+            return true;
+        }
+
+        /* ────────────────── /clan ally setwarp|warp … ───────────────── */
+        if (args[0].equalsIgnoreCase("ally") &&
+                (args[1].equalsIgnoreCase("setwarp") || args[1].equalsIgnoreCase("warp"))) {
+
+            // basis-checks
+            Clan myClan = data.getClan();
+            if (myClan == null) {
+                player.sendMessage(ChatUtil.color(ConfigManager.getMessage("not-in-clan")));
+                return true;
+            }
+            if (args.length < 3) {
+                player.sendMessage(ChatUtil.color("&c✗ Usage: /clan ally " + args[1] + " <name>"));
+                return true;
+            }
+
+            String warpName = args[2].toLowerCase();
+            boolean isSet = args[1].equalsIgnoreCase("setwarp");
+
+            /* ---------- /clan ally setwarp <name> ---------- */
+            if (isSet) {
+                if (!Arrays.asList("LEADER", "OFFICER").contains(data.getClanRole())) {
+                    player.sendMessage(ChatUtil.color("&c✗ Only leaders or officers can set ally warps."));
+                    return true;
+                }
+                int max = ConfigManager.get().getInt("warp-ally.max-warps-per-clan");
+                if (myClan.getAllyWarps().size() >= max && !myClan.getAllyWarps().containsKey(warpName)) {
+                    player.sendMessage(ChatUtil.color("&c✗ Ally-warp limit reached (" + max + ")."));
+                    return true;
+                }
+
+                myClan.addAllyWarp(warpName, player.getLocation());
+                plugin.saveClans();
+                player.sendMessage(ChatUtil.color("&a✓ Ally-warp &e" + warpName + " &aset."));
+                return true;
+            }
+
+            /* ---------- /clan ally warp <name> ------------- */
+            // mag gebruikt worden door:
+            // 1) eigen clan
+            // 2) bondgenoten mét wederzijdse ally
+            Clan owner = myClan; // default: eigen clan
+            if (!owner.getAllyWarps().containsKey(warpName)) {
+                // kijk of een bondgenoot deze warp heeft
+                owner = clanManager.getAllClans().stream()
+                        .filter(c -> c.getAllyWarps().containsKey(warpName)
+                                && c.getAllyWarps().get(warpName) != null
+                                && clanManager.areAllies(c.getName(), myClan.getName()))
+                        .findFirst().orElse(null);
+                if (owner == null) {
+                    player.sendMessage(ChatUtil.color("&c✗ Ally-warp not found."));
+                    return true;
+                }
+            }
+
+            int cd = ConfigManager.get().getInt("warp-ally.cooldown-seconds");
+            long now = System.currentTimeMillis() / 1000;
+            if (now < data.getNextAllyWarpTime()) {
+                long left = data.getNextAllyWarpTime() - now;
+                player.sendMessage(ChatUtil.color("&c✗ Wait " + left + " s before ally-warping again."));
+                return true;
+            }
+
+            Location loc = owner.getAllyWarps().get(warpName);
+            player.teleport(loc);
+            data.setNextAllyWarpTime(now + cd);
+            player.sendMessage(ChatUtil.color("&b✦ Teleported to ally-warp &f" + warpName));
+            return true;
+        }
+
+        /* ───────────────────────── ISSUE SUB-COMMAND ───────────────────────── */
+        if (args[0].equalsIgnoreCase("issue")) {
+
+            // 0. Basis-validatie
+            if (args.length < 4) {
+                player.sendMessage(ChatUtil.color(
+                        "&c✗ Use: /clan issue <username> <title> <description>"));
+                return true;
+            }
+
+            /*
+             * 1. Parameters uit elkaar trekken
+             * args[1] = ingame-naam die in de issue-tekst moet verschijnen
+             * args[2] = korte titel
+             * args[3…] = volledige omschrijving
+             */
+            String reporterName = args[1];
+            String title = args[2];
+            String body = String.join(" ",
+                    Arrays.copyOfRange(args, 3, args.length)) +
+                    "\n\n---\n_Reported by **" + reporterName +
+                    "** in-game (UUID: " + player.getUniqueId() + ")_";
+
+            /*
+             * 2. GitHub-credentials uit config (plugins/ClansPvP/config.yml)
+             * github:
+             * token: "ghp_…"
+             * repository: "Wolfsketch/ClansPvP"
+             */
+            String token = ConfigManager.get().getString("github.token");
+            String repo = ConfigManager.get().getString("github.repository");
+
+            if (token == null || token.isEmpty() || repo == null || repo.isEmpty()) {
+                player.sendMessage(ChatUtil.color("&c✗ GitHub-token of repo missing in config."));
+                return true;
+            }
+
+            // 3. Netwerk-IO altijd asynchroon uitvoeren
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    GitHub gh = new GitHubBuilder().withOAuthToken(token).build();
+                    GHRepository repository = gh.getRepository(repo);
+
+                    repository.createIssue(title)
+                            .body(body)
+                            .label("bug")
+                            .create();
+
+                    player.sendMessage(ChatUtil.color("&a✓ Issue uploaded to GitHub!"));
+                } catch (IOException e) {
+                    player.sendMessage(ChatUtil.color(
+                            "&c✗ Could not upload issue: " + e.getMessage()));
+                    plugin.getLogger().severe("GitHub-upload failed");
+                    e.printStackTrace();
+                }
+            });
             return true;
         }
 

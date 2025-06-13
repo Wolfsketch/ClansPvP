@@ -6,8 +6,14 @@
 enable-plugin: true
 debug-mode: false
 
-# ─── Power System ─────────────────────────────
+# ─── GitHub-integratie voor /clan issue ──────
+github:
+  repository: "Wolfsketch/ClansPvP"
+  token: "ghp_your_personal_token_here" # ← vul lokaal in, niet committen!
+  default-labels: ["bug"]
+  cooldown-seconds: 60
 
+# ─── Power System ─────────────────────────────
 enable-power: true
 start-power-per-player: 0
 max-power-per-player: 50
@@ -20,7 +26,6 @@ power-regen:
   amount-per-interval: 1
 
 # ─── Donor Bonuses ───────────────────────────
-
 donor-bonus-power:
   enabled: true
   default-bonus: 0
@@ -38,7 +43,6 @@ donor-bonus-vault:
     platinum: 15
 
 # ─── Land Claim Settings ─────────────────────
-
 claiming:
   enabled: true
   use-whole-chunk: true
@@ -51,7 +55,6 @@ claiming:
   unclaim-on-disband: true
 
 # ─── Clan Creation Settings ──────────────────
-
 clan-creation:
   enabled: true
   require-permission: false
@@ -61,33 +64,35 @@ clan-creation:
   allow-friendly-fire: false
   max-members-per-clan: 15
 
-# ─── Global Settings ──────────────────────────
-
+# ─── Global Settings ─────────────────────────
 settings:
   allow-friendly-fire-between-allies: false
 
-# ─── Ally-Trust Defaults ───────────────────────
+# ─── Ally-Trust Defaults ─────────────────────
 ally-trust:
   default-enabled: false
   require-mutual: true
 
 # ─── Clan Vault Settings ─────────────────────
-
 vault:
   enabled: true
   base-slots: 20
   allow-item-limit: true
 
 # ─── Warp System ─────────────────────────────
-
 warp:
   enabled: true
   max-warps-per-clan: 5
   cooldown-seconds: 30
   setwarp-permission: false
 
-# ─── Role Permissions ────────────────────────
+# ─── Ally-Warp System (nieuw) ────────────────
+warp-ally:
+  enabled: true
+  max-warps-per-clan: 2 # lager dan gewone warps
+  cooldown-seconds: 60 # eigen cooldown
 
+# ─── Role Permissions ───────────────────────
 roles:
   LEADER:
     can-invite: true
@@ -114,8 +119,7 @@ roles:
     can-setwarp: false
     can-raid: false
 
-# ─── Raid Settings ────────────────────────────
-
+# ─── Raid Settings ───────────────────────────
 raid:
   enabled: true
   allow-only-leaders: true

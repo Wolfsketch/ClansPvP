@@ -61,8 +61,8 @@ public class ClanScoreboard {
                 obj.getScore(ChatColor.YELLOW + "Claims: " + ChatColor.AQUA + claimCount + ChatColor.GRAY + " / "
                                 + ChatColor.DARK_AQUA + maxClaims).setScore(4);
                 obj.getScore(allyLine).setScore(3);
-                obj.getScore(ChatColor.GRAY + "  ").setScore(2);
-
+                obj.getScore(ChatColor.YELLOW + "Report: " + ChatColor.GREEN + "/clan issue").setScore(2);
+                obj.getScore(ChatColor.GRAY + "  ").setScore(1);
                 player.setScoreboard(board);
         }
 

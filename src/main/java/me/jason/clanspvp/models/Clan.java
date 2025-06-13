@@ -3,6 +3,7 @@ package me.jason.clanspvp.models;
 import me.jason.clanspvp.ClansPvP;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
@@ -12,41 +13,48 @@ import java.util.stream.Collectors;
 public class Clan {
 
     /*
-     * ────────────────────────────────────────────────────────────
+     * ───────────────────────────────
      * Core fields
-     * ──────────────────────────────────────────────────────────
+     * ─────────────────────────────
      */
     private final String name;
     private final String tag;
     private final UUID leader;
 
-    // members : UUID → role ( LEADER / OFFICER / MEMBER / RECRUIT )
+    /** members : UUID → role (LEADER / OFFICER / MEMBER / RECRUIT) */
     private final Map<UUID, String> members = new HashMap<>();
 
-    // allies : lowercase-clan-name → true (simple presence means allied)
+    /** allies : lowercase‐clan‐name → present means allied */
     private final Set<String> allies = new HashSet<>();
-
-    // build-trust : lowercase-clan-name → true / false (defaults to false)
+    /** per-ally build-trust toggle */
     private final Map<String, Boolean> allyBuildTrust = new HashMap<>();
 
     /*
-     * ────────────────────────────────────────────────────────────
+     * ───────────────────────────────
+     * Warps
+     * ─────────────────────────────
+     */
+    private final Map<String, Location> warps = new HashMap<>();
+    private final Map<String, Location> allyWarps = new HashMap<>();
+
+    /*
+     * ───────────────────────────────
      * Flags / volatile data
-     * ──────────────────────────────────────────────────────────
+     * ─────────────────────────────
      */
     private boolean allowFriendlyFire = false;
 
-    // Raid
+    /* Raid data */
     private double raidX = 0, raidY = 0, raidZ = 0;
     private boolean raidActive = false;
 
-    // Non-persistent vault inventory
+    /** Non-persistent vault inventory */
     private transient Inventory vault;
 
     /*
-     * ────────────────────────────────────────────────────────────
+     * ───────────────────────────────
      * Constructors
-     * ──────────────────────────────────────────────────────────
+     * ─────────────────────────────
      */
     public Clan(String name, String tag, UUID leader) {
         this.name = name;
@@ -56,9 +64,9 @@ public class Clan {
     }
 
     /*
-     * ────────────────────────────────────────────────────────────
+     * ───────────────────────────────
      * Basic getters
-     * ──────────────────────────────────────────────────────────
+     * ─────────────────────────────
      */
     public String getName() {
         return name;
@@ -73,9 +81,9 @@ public class Clan {
     }
 
     /*
-     * ────────────────────────────────────────────────────────────
+     * ───────────────────────────────
      * Member handling
-     * ──────────────────────────────────────────────────────────
+     * ─────────────────────────────
      */
     public void addMember(UUID uuid, String role) {
         members.put(uuid, role);
@@ -109,15 +117,15 @@ public class Clan {
     }
 
     /*
-     * ────────────────────────────────────────────────────────────
+     * ───────────────────────────────
      * Power helpers
-     * ──────────────────────────────────────────────────────────
+     * ─────────────────────────────
      */
     public double getPower() {
         return members.keySet().stream()
                 .map(id -> ClansPvP.getInstance().getPlayerData(id))
                 .filter(Objects::nonNull)
-                .mapToDouble(p -> p.getPower())
+                .mapToDouble(PlayerData::getPower)
                 .sum();
     }
 
@@ -126,9 +134,9 @@ public class Clan {
     }
 
     /*
-     * ────────────────────────────────────────────────────────────
+     * ───────────────────────────────
      * Raid helpers
-     * ──────────────────────────────────────────────────────────
+     * ─────────────────────────────
      */
     public void setRaidLocation(double x, double y, double z) {
         raidX = x;
@@ -158,9 +166,9 @@ public class Clan {
     }
 
     /*
-     * ────────────────────────────────────────────────────────────
+     * ───────────────────────────────
      * Vault
-     * ──────────────────────────────────────────────────────────
+     * ─────────────────────────────
      */
     public Inventory getVault() {
         if (vault == null || vault.getSize() != getVaultSize()) {
@@ -181,9 +189,9 @@ public class Clan {
     }
 
     /*
-     * ────────────────────────────────────────────────────────────
+     * ───────────────────────────────
      * Allies
-     * ──────────────────────────────────────────────────────────
+     * ─────────────────────────────
      */
     public Set<String> getAllies() {
         return allies;
@@ -192,7 +200,7 @@ public class Clan {
     public void addAlly(String clan) {
         String key = clan.toLowerCase();
         allies.add(key);
-        allyBuildTrust.putIfAbsent(key, false); // default: not trusted to build
+        allyBuildTrust.putIfAbsent(key, false);
     }
 
     public void removeAlly(String clan) {
@@ -205,12 +213,10 @@ public class Clan {
         return allies.contains(clan.toLowerCase());
     }
 
-    /* ── Build-trust helpers ─────────────────────────────────── */
     public void setAllyBuildTrust(String clan, boolean allow) {
         String key = clan.toLowerCase();
-        if (isAlliedWith(key)) {
+        if (isAlliedWith(key))
             allyBuildTrust.put(key, allow);
-        }
     }
 
     public boolean isAllyAllowedToBuild(String clan) {
@@ -218,9 +224,9 @@ public class Clan {
     }
 
     /*
-     * ────────────────────────────────────────────────────────────
-     * Friendly Fire toggle
-     * ──────────────────────────────────────────────────────────
+     * ───────────────────────────────
+     * Friendly-fire toggle
+     * ─────────────────────────────
      */
     public boolean isAllowFriendlyFire() {
         return allowFriendlyFire;
@@ -228,5 +234,31 @@ public class Clan {
 
     public void setAllowFriendlyFire(boolean b) {
         allowFriendlyFire = b;
+    }
+
+    /*
+     * ───────────────────────────────
+     * Clan warps
+     * ─────────────────────────────
+     */
+    public Map<String, Location> getWarps() {
+        return warps;
+    }
+
+    public void addWarp(String name, Location loc) {
+        warps.put(name.toLowerCase(), loc);
+    }
+
+    /*
+     * ───────────────────────────────
+     * Ally-warps
+     * ─────────────────────────────
+     */
+    public Map<String, Location> getAllyWarps() {
+        return allyWarps;
+    }
+
+    public void addAllyWarp(String name, Location loc) {
+        allyWarps.put(name.toLowerCase(), loc);
     }
 }
