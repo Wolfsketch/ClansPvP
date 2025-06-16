@@ -38,8 +38,8 @@ From land claims and power to raids, vaults, warps, alliances, and even in-game 
 /clan promote|demote <player>    – Rank management
 /clan disband / confirm          – Disband clan
 
-/clan claim|unclaim            – Claim / unclaim chunk
-/clan raid start|stop |check      – Raid controls
+/clan claim|unclaim              – Claim / unclaim chunk
+/clan raid start|stop |check     – Raid controls
 
 /clan setwarp <name>             – Set clan warp
 /clan warp <name>                – Teleport to clan warp
